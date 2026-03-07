@@ -9,8 +9,8 @@
 .form-panel {
   width: 45%;
   min-width: 380px;
-  background: #fff;
-  border-right: 1px solid #dde3ea;
+  background: #1f2229;
+  border-right: 1px solid #2e323c;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -18,9 +18,10 @@
 
 .form-panel-header {
   padding: 20px 24px 16px;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: white;
+  background: linear-gradient(135deg, #2a2e3a, #1f2229);
+  color: #e2e5ea;
   flex-shrink: 0;
+  border-bottom: 1px solid #2e323c;
 }
 
 .app-title {
@@ -31,7 +32,7 @@
 
 .app-subtitle {
   font-size: 0.85rem;
-  opacity: 0.85;
+  opacity: 0.65;
   margin-top: 4px;
 }
 
@@ -44,7 +45,7 @@
 /* ========== Form Sections ========== */
 .form-section {
   padding: 20px 24px;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid #272b33;
 }
 
 .section-header {
@@ -57,7 +58,7 @@
 .section-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #1e40af;
+  color: #8ba3cc;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 16px;
@@ -88,7 +89,7 @@
 .form-group label {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #4b5563;
+  color: #7a8499;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -96,22 +97,27 @@
 .form-group input,
 .form-group textarea,
 .form-group select {
-  border: 1px solid #d1d5db;
+  border: 1px solid #363b47;
   border-radius: 6px;
   padding: 8px 10px;
   font-size: 0.9rem;
-  color: #374151;
-  background: #fff;
+  color: #dde1e8;
+  background: #272b35;
   transition: border-color 0.2s, box-shadow 0.2s;
   font-family: inherit;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #4e5567;
 }
 
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: #5b7ec9;
+  box-shadow: 0 0 0 3px rgba(91, 126, 201, 0.15);
 }
 
 .form-group textarea {
@@ -126,37 +132,39 @@
   font-size: 0.82rem !important;
   font-weight: 400 !important;
   text-transform: none !important;
-  color: #6b7280 !important;
+  color: #7a8499 !important;
   margin-top: 6px;
   cursor: pointer;
 }
 
 .checkbox-label input {
   width: auto;
+  accent-color: #5b7ec9;
 }
 
 /* ========== Buttons ========== */
 .btn-add {
-  background: #2563eb;
-  color: white;
-  border: none;
+  background: #374872;
+  color: #a8c4f0;
+  border: 1px solid #4a6099;
   border-radius: 6px;
   padding: 7px 14px;
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, border-color 0.2s;
   white-space: nowrap;
 }
 
 .btn-add:hover {
-  background: #1d4ed8;
+  background: #3f5585;
+  border-color: #5b7ec9;
 }
 
 .btn-remove {
-  background: #fee2e2;
-  color: #dc2626;
-  border: none;
+  background: #3a2626;
+  color: #e07a7a;
+  border: 1px solid #5a3434;
   border-radius: 6px;
   padding: 4px 10px;
   font-size: 0.78rem;
@@ -166,13 +174,13 @@
 }
 
 .btn-remove:hover {
-  background: #fecaca;
+  background: #4a2e2e;
 }
 
 /* ========== Entry Cards ========== */
 .entry-card {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: #272b35;
+  border: 1px solid #2e323c;
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 12px;
@@ -185,7 +193,7 @@
   margin-bottom: 12px;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #6b7280;
+  color: #7a8499;
 }
 
 /* ========== Skills ========== */
@@ -197,17 +205,23 @@
 
 .skills-input-row input {
   flex: 1;
-  border: 1px solid #d1d5db;
+  border: 1px solid #363b47;
   border-radius: 6px;
   padding: 8px 10px;
   font-size: 0.9rem;
   font-family: inherit;
+  color: #dde1e8;
+  background: #272b35;
+}
+
+.skills-input-row input::placeholder {
+  color: #4e5567;
 }
 
 .skills-input-row input:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: #5b7ec9;
+  box-shadow: 0 0 0 3px rgba(91, 126, 201, 0.15);
 }
 
 .skills-tags {
@@ -220,9 +234,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
+  background: #2a3349;
+  border: 1px solid #3d5282;
+  color: #8fb4e8;
   border-radius: 20px;
   padding: 4px 12px;
   font-size: 0.83rem;
@@ -232,7 +246,7 @@
 .skill-tag button {
   background: none;
   border: none;
-  color: #93c5fd;
+  color: #5b7eb8;
   cursor: pointer;
   font-size: 1rem;
   line-height: 1;
@@ -241,13 +255,13 @@
 }
 
 .skill-tag button:hover {
-  color: #dc2626;
+  color: #e07a7a;
 }
 
 /* ========== Preview Panel ========== */
 .preview-panel {
   flex: 1;
-  background: #e8edf3;
+  background: #14171d;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -258,21 +272,21 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 24px;
-  background: #fff;
-  border-bottom: 1px solid #dde3ea;
+  background: #1a1e26;
+  border-bottom: 1px solid #2e323c;
   flex-shrink: 0;
 }
 
 .preview-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #374151;
+  color: #a0a8b8;
 }
 
 .btn-download {
-  background: #059669;
-  color: white;
-  border: none;
+  background: #1f4f3a;
+  color: #6ed8a8;
+  border: 1px solid #2e7a5c;
   border-radius: 8px;
   padding: 9px 20px;
   font-size: 0.88rem;
@@ -283,11 +297,12 @@
 }
 
 .btn-download:hover:not(:disabled) {
-  background: #047857;
+  background: #275f47;
+  border-color: #3a9e74;
 }
 
 .btn-download:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
@@ -299,14 +314,14 @@
   justify-content: center;
 }
 
-/* ========== Resume Paper ========== */
+/* ========== Resume Paper (keep white — it's a printed document) ========== */
 .resume-paper {
   background: #fff;
   width: 210mm;
   max-width: 100%;
   min-height: 297mm;
   padding: 18mm 16mm;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  box-shadow: 0 6px 32px rgba(0,0,0,0.5);
   font-size: 10pt;
   line-height: 1.5;
   color: #111;
@@ -317,7 +332,7 @@
   align-items: center;
   justify-content: center;
   height: 200px;
-  color: #9ca3af;
+  color: #6b7280;
   font-style: italic;
   font-size: 0.95rem;
 }
