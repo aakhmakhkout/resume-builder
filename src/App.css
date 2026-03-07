@@ -1,3 +1,9 @@
+/* ========== Design Tokens ========== */
+:root {
+  --page-height: 297mm;
+  --page-width: 210mm;
+}
+
 /* ========== Layout ========== */
 .app-layout {
   display: flex;
@@ -312,19 +318,29 @@
   padding: 24px;
   display: flex;
   justify-content: center;
+  align-items: flex-start;
 }
 
 /* ========== Resume Paper (keep white — it's a printed document) ========== */
 .resume-paper {
   background: #fff;
-  width: 210mm;
+  width: var(--page-width);
   max-width: 100%;
-  min-height: 297mm;
+  min-height: var(--page-height);
   padding: 18mm 16mm;
   box-shadow: 0 6px 32px rgba(0,0,0,0.5);
   font-size: 10pt;
   line-height: 1.5;
   color: #111;
+  /* Draw a subtle rule at every page boundary so multi-page content is clear */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--page-height) - 1px),
+    #d1d5db calc(var(--page-height) - 1px),
+    #d1d5db var(--page-height)
+  );
+  background-size: 100% var(--page-height);
 }
 
 .resume-empty-state {
@@ -377,6 +393,8 @@
 
 .resume-section {
   margin-bottom: 14px;
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 .resume-section-title {
@@ -388,6 +406,8 @@
   border-bottom: 1.5px solid #bfdbfe;
   padding-bottom: 3px;
   margin-bottom: 8px;
+  break-after: avoid;
+  page-break-after: avoid;
 }
 
 .resume-summary {
@@ -398,6 +418,8 @@
 
 .resume-entry {
   margin-bottom: 10px;
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 .resume-entry-header {
