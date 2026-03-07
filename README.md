@@ -1,1 +1,1 @@
-readme file
+#THIS PROJECT IS MADE WITH AI (Claude Sonnet 4.6)
