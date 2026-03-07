@@ -1,5 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
+
+const STORAGE_KEY = 'resume_builder_data';
 
 const initialState = {
   personalInfo: {
@@ -20,10 +22,34 @@ const initialState = {
   languages: [],
 };
 
+function loadFromStorage() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {
+    // ignore parse errors
+  }
+  return initialState;
+}
+
 const ResumeContext = createContext(null);
 
 export function ResumeProvider({ children }) {
-  const [resume, setResume] = useState(initialState);
+  const [resume, setResume] = useState(loadFromStorage);
+
+  // Persist to localStorage with debounce to avoid excessive writes while typing
+  const saveTimerRef = useRef(null);
+  useEffect(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(resume));
+      } catch {
+        // ignore storage errors (e.g. private browsing quota)
+      }
+    }, 400);
+    return () => clearTimeout(saveTimerRef.current);
+  }, [resume]);
 
   const updatePersonalInfo = (field, value) => {
     setResume(prev => ({
