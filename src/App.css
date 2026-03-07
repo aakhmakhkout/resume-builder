@@ -4,11 +4,30 @@
   --page-width: 210mm;
 }
 
+/* ========== Outer Root ========== */
+.app-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
 /* ========== Layout ========== */
 .app-layout {
   display: flex;
-  height: 100vh;
+  flex: 1;
   overflow: hidden;
+}
+
+/* ========== Footer ========== */
+.app-footer {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 10px 24px;
+  background: #1a1e26;
+  border-top: 1px solid #2e323c;
+  color: #6b7280;
+  font-size: 0.75rem;
+  letter-spacing: 0.2px;
 }
 
 /* ========== Form Panel ========== */
@@ -518,10 +537,12 @@
 
 /* ========== Responsive ========== */
 @media (max-width: 900px) {
-  .app-layout {
-    flex-direction: column;
+  .app-root {
     height: auto;
     min-height: 100vh;
+  }
+  .app-layout {
+    flex-direction: column;
     overflow: auto;
   }
   .form-panel {

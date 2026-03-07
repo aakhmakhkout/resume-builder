@@ -12,23 +12,28 @@ import './App.css';
 function App() {
   return (
     <ResumeProvider>
-      <div className="app-layout">
-        <div className="form-panel">
-          <div className="form-panel-header">
-            <h1 className="app-title">📄 Resume Builder</h1>
-            <p className="app-subtitle">Fill in your details and see your resume update in real-time</p>
+      <div className="app-root">
+        <div className="app-layout">
+          <div className="form-panel">
+            <div className="form-panel-header">
+              <h1 className="app-title">📄 Resume Builder</h1>
+              <p className="app-subtitle">Fill in your details and see your resume update in real-time</p>
+            </div>
+            <div className="form-panel-content">
+              <PersonalInfo />
+              <WorkExperience />
+              <Education />
+              <Skills />
+              <Projects />
+              <Certifications />
+              <Languages />
+            </div>
           </div>
-          <div className="form-panel-content">
-            <PersonalInfo />
-            <WorkExperience />
-            <Education />
-            <Skills />
-            <Projects />
-            <Certifications />
-            <Languages />
-          </div>
+          <ResumePreview />
         </div>
-        <ResumePreview />
+        <footer className="app-footer">
+          © {new Date().getFullYear()} Aakh Makh Kout. All rights reserved.
+        </footer>
       </div>
     </ResumeProvider>
   );
