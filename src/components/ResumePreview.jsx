@@ -45,12 +45,12 @@ export default function ResumePreview() {
               {personalInfo.location && <span>{personalInfo.location}</span>}
               {personalInfo.linkedin && (
                 <span>
-                  <a href={personalInfo.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>
+                  <a href={personalInfo.linkedin} target="_blank" rel="noreferrer">{personalInfo.linkedin}</a>
                 </span>
               )}
               {personalInfo.github && (
                 <span>
-                  <a href={personalInfo.github} target="_blank" rel="noreferrer">GitHub/Portfolio</a>
+                  <a href={personalInfo.github} target="_blank" rel="noreferrer">{personalInfo.github}</a>
                 </span>
               )}
             </div>
