@@ -498,20 +498,10 @@
   line-height: 1.5;
 }
 
-.resume-skills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.resume-skill-tag {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
-  border-radius: 3px;
-  padding: 2px 8px;
-  font-size: 8.5pt;
-  font-weight: 500;
+.resume-skills-plain {
+  font-size: 9.5pt;
+  color: #374151;
+  line-height: 1.6;
 }
 
 .resume-languages {
