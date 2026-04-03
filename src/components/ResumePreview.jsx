@@ -17,7 +17,7 @@ export default function ResumePreview() {
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+        pagebreak: { mode: ['css', 'legacy'] },
       };
       html2pdf().set(opt).from(element).save();
     });
@@ -40,17 +40,17 @@ export default function ResumePreview() {
             {personalInfo.fullName && <h1 className="resume-name">{personalInfo.fullName}</h1>}
             {personalInfo.jobTitle && <p className="resume-job-title">{personalInfo.jobTitle}</p>}
             <div className="resume-contact">
-              {personalInfo.email && <span>✉ {personalInfo.email}</span>}
-              {personalInfo.phone && <span>📞 {personalInfo.phone}</span>}
-              {personalInfo.location && <span>📍 {personalInfo.location}</span>}
+              {personalInfo.email && <span>{personalInfo.email}</span>}
+              {personalInfo.phone && <span>{personalInfo.phone}</span>}
+              {personalInfo.location && <span>{personalInfo.location}</span>}
               {personalInfo.linkedin && (
                 <span>
-                  <a href={personalInfo.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>
+                  <a href={personalInfo.linkedin} target="_blank" rel="noreferrer">{personalInfo.linkedin}</a>
                 </span>
               )}
               {personalInfo.github && (
                 <span>
-                  <a href={personalInfo.github} target="_blank" rel="noreferrer">GitHub/Portfolio</a>
+                  <a href={personalInfo.github} target="_blank" rel="noreferrer">{personalInfo.github}</a>
                 </span>
               )}
             </div>
@@ -117,11 +117,7 @@ export default function ResumePreview() {
           {skills.length > 0 && (
             <section className="resume-section">
               <h3 className="resume-section-title">Skills</h3>
-              <div className="resume-skills">
-                {skills.map((skill, i) => (
-                  <span className="resume-skill-tag" key={i}>{skill}</span>
-                ))}
-              </div>
+              <p className="resume-skills-plain">{skills.join(', ')}</p>
             </section>
           )}
 

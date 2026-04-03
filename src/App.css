@@ -411,9 +411,7 @@
 }
 
 .resume-section {
-  margin-bottom: 14px;
-  break-inside: avoid;
-  page-break-inside: avoid;
+  margin-bottom: 10px;
 }
 
 .resume-section-title {
@@ -425,8 +423,6 @@
   border-bottom: 1.5px solid #bfdbfe;
   padding-bottom: 3px;
   margin-bottom: 8px;
-  break-after: avoid;
-  page-break-after: avoid;
 }
 
 .resume-summary {
@@ -498,20 +494,10 @@
   line-height: 1.5;
 }
 
-.resume-skills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.resume-skill-tag {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
-  border-radius: 3px;
-  padding: 2px 8px;
-  font-size: 8.5pt;
-  font-weight: 500;
+.resume-skills-plain {
+  font-size: 9.5pt;
+  color: #374151;
+  line-height: 1.6;
 }
 
 .resume-languages {
@@ -535,7 +521,48 @@
   content: '';
 }
 
-/* ========== Responsive ========== */
+/* ========== Print / PDF ========== */
+@media print {
+  .app-root,
+  .app-layout,
+  .preview-panel,
+  .resume-paper-wrapper {
+    height: auto;
+    overflow: visible;
+  }
+
+  .form-panel,
+  .preview-toolbar,
+  .app-footer {
+    display: none;
+  }
+
+  .resume-paper {
+    box-shadow: none;
+    padding: 0;
+    min-height: unset;
+    background-image: none;
+  }
+
+  /* Allow sections to flow across pages naturally */
+  .resume-section {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  /* Keep individual entries together but allow sections to split */
+  .resume-entry {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Keep section title glued to the first entry below it */
+  .resume-section-title {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+}
+
 @media (max-width: 900px) {
   .app-root {
     height: auto;
