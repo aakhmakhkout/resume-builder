@@ -40,17 +40,17 @@ export default function ResumePreview() {
             {personalInfo.fullName && <h1 className="resume-name">{personalInfo.fullName}</h1>}
             {personalInfo.jobTitle && <p className="resume-job-title">{personalInfo.jobTitle}</p>}
             <div className="resume-contact">
-              {personalInfo.email && <span>✉ {personalInfo.email}</span>}
-              {personalInfo.phone && <span>📞 {personalInfo.phone}</span>}
-              {personalInfo.location && <span>📍 {personalInfo.location}</span>}
+              {personalInfo.email && <span>{personalInfo.email}</span>}
+              {personalInfo.phone && <span>{personalInfo.phone}</span>}
+              {personalInfo.location && <span>{personalInfo.location}</span>}
               {personalInfo.linkedin && (
                 <span>
-                  <a href={personalInfo.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>
+                  <a href={personalInfo.linkedin} target="_blank" rel="noreferrer">{personalInfo.linkedin}</a>
                 </span>
               )}
               {personalInfo.github && (
                 <span>
-                  <a href={personalInfo.github} target="_blank" rel="noreferrer">GitHub/Portfolio</a>
+                  <a href={personalInfo.github} target="_blank" rel="noreferrer">{personalInfo.github}</a>
                 </span>
               )}
             </div>
@@ -117,11 +117,7 @@ export default function ResumePreview() {
           {skills.length > 0 && (
             <section className="resume-section">
               <h3 className="resume-section-title">Skills</h3>
-              <div className="resume-skills">
-                {skills.map((skill, i) => (
-                  <span className="resume-skill-tag" key={i}>{skill}</span>
-                ))}
-              </div>
+              <p className="resume-skills-plain">{skills.join(', ')}</p>
             </section>
           )}
 
