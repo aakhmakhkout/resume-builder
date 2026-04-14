@@ -6,21 +6,45 @@ export default function ResumePreview() {
   const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
   const resumeRef = useRef(null);
 
-  const handleDownloadPDF = () => {
+  const getPdfOptions = (filename) => ({
+    margin: [12.7, 12.7, 12.7, 12.7],
+    filename,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'] },
+  });
+
+  const withPdfElement = (action) => {
     const element = resumeRef.current;
     if (!element) return;
 
-    import('html2pdf.js').then(({ default: html2pdf }) => {
-      const opt = {
-        margin: [10, 10, 10, 10],
-        filename: `${personalInfo.fullName || 'resume'}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] },
-      };
-      html2pdf().set(opt).from(element).save();
-    });
+    const originalPadding = element.style.padding;
+    element.style.padding = '0';
+
+    import('html2pdf.js')
+      .then(({ default: html2pdf }) => {
+        const opt = getPdfOptions(`${personalInfo.fullName || 'resume'}.pdf`);
+        return action(html2pdf, opt, element);
+      })
+      .catch(() => {})
+      .finally(() => {
+        element.style.padding = originalPadding;
+      });
+  };
+
+  const handleDownloadPDF = () => {
+    withPdfElement((html2pdf, opt, element) =>
+      html2pdf().set(opt).from(element).save()
+    );
+  };
+
+  const handlePreviewPDF = () => {
+    withPdfElement((html2pdf, opt, element) =>
+      html2pdf().set(opt).from(element).outputPdf('bloburl').then((blobUrl) => {
+        window.open(blobUrl, '_blank');
+      })
+    );
   };
 
   const hasContent = personalInfo.fullName || personalInfo.email;
@@ -29,9 +53,14 @@ export default function ResumePreview() {
     <div className="preview-panel">
       <div className="preview-toolbar">
         <h2 className="preview-title">Live Preview</h2>
-        <button className="btn-download" onClick={handleDownloadPDF} disabled={!hasContent}>
-          ⬇ Download PDF
-        </button>
+        <div className="preview-toolbar-actions">
+          <button className="btn-preview" onClick={handlePreviewPDF} disabled={!hasContent}>
+            👁 Preview PDF
+          </button>
+          <button className="btn-download" onClick={handleDownloadPDF} disabled={!hasContent}>
+            ⬇ Download PDF
+          </button>
+        </div>
       </div>
       <div className="resume-paper-wrapper">
         <div className="resume-paper" ref={resumeRef}>
