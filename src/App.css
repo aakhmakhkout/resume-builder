@@ -331,6 +331,34 @@
   cursor: not-allowed;
 }
 
+.preview-toolbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-preview {
+  background: #1f3a4f;
+  color: #6ec0d8;
+  border: 1px solid #2e5c7a;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+  letter-spacing: 0.2px;
+}
+
+.btn-preview:hover:not(:disabled) {
+  background: #274f5f;
+  border-color: #3a7e9e;
+}
+
+.btn-preview:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .resume-paper-wrapper {
   flex: 1;
   overflow-y: auto;
@@ -346,7 +374,7 @@
   width: var(--page-width);
   max-width: 100%;
   min-height: var(--page-height);
-  padding: 18mm 16mm;
+  padding: 12.7mm;
   box-shadow: 0 6px 32px rgba(0,0,0,0.5);
   font-size: 10pt;
   line-height: 1.5;
@@ -522,6 +550,11 @@
 }
 
 /* ========== Print / PDF ========== */
+@page {
+  size: A4;
+  margin: 12.7mm;
+}
+
 @media print {
   .app-root,
   .app-layout,
@@ -590,6 +623,6 @@
     padding: 16px;
   }
   .resume-paper {
-    padding: 12mm 8mm;
+    padding: 8mm;
   }
 }
