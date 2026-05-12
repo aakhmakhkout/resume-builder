@@ -1,6 +1,9 @@
 import { useResume } from '../context/ResumeContext';
 import { useRef, useState, useEffect } from 'react';
 
+const PREVIEW_URL_REVOKE_DELAY_MS = 60_000;
+const DOWNLOAD_URL_REVOKE_DELAY_MS = 5000;
+
 export default function ResumePreview() {
   const { resume } = useResume();
   const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
@@ -30,7 +33,7 @@ export default function ResumePreview() {
   const openPreviewFromBlob = (blob) => {
     const blobUrl = URL.createObjectURL(blob);
     window.open(blobUrl, '_blank', 'noopener,noreferrer');
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), PREVIEW_URL_REVOKE_DELAY_MS);
   };
 
   const downloadBlob = (blob, filename) => {
@@ -41,7 +44,7 @@ export default function ResumePreview() {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), DOWNLOAD_URL_REVOKE_DELAY_MS);
   };
 
   const handleDownloadMultiPage = async () => {

@@ -156,8 +156,12 @@ const createStyles = (scale) =>
     },
   });
 
-const renderDateRange = (startDate, endDate, current) =>
-  `${startDate || ''}${startDate && (endDate || current) ? ' – ' : ''}${current ? 'Present' : endDate || ''}`.trim();
+const renderDateRange = (startDate, endDate, current) => {
+  const normalizedStart = startDate || '';
+  const normalizedEnd = current ? 'Present' : endDate || '';
+  const hasRangeSeparator = Boolean(normalizedStart && normalizedEnd);
+  return `${normalizedStart}${hasRangeSeparator ? ' – ' : ''}${normalizedEnd}`.trim();
+};
 
 const ContactText = ({ personalInfo, styles }) => {
   const items = [
@@ -209,7 +213,7 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
                 </View>
                 {exp.location ? <Text style={styles.subText}>{exp.location}</Text> : null}
                 {exp.description
-                  ? exp.description.split('\n').filter(Boolean).map((line, lineIndex) => (
+                  ? exp.description.split('\n').filter((line) => line.trim()).map((line, lineIndex) => (
                     <Text key={`work-desc-${index}-${lineIndex}`} style={styles.bodyText}>
                       {line}
                     </Text>
