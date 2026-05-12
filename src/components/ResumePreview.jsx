@@ -1,7 +1,9 @@
 import { useResume } from '../context/ResumeContext';
 import { useRef, useState, useEffect } from 'react';
 
+// Keep preview URLs alive longer so users can read/open the new tab reliably.
 const PREVIEW_URL_REVOKE_DELAY_MS = 60_000;
+// Download URLs can be revoked quickly after the browser starts the file save.
 const DOWNLOAD_URL_REVOKE_DELAY_MS = 5000;
 
 export default function ResumePreview() {

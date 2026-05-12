@@ -1,6 +1,7 @@
 import { Document, Page, Text, View, Link, StyleSheet } from '@react-pdf/renderer';
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+const isNonEmptyLine = (line) => line.trim();
 
 const estimateWrappedLines = (text, charsPerLine = 85) => {
   if (!text) return 0;
@@ -213,7 +214,7 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
                 </View>
                 {exp.location ? <Text style={styles.subText}>{exp.location}</Text> : null}
                 {exp.description
-                  ? exp.description.split('\n').filter((line) => line.trim()).map((line, lineIndex) => (
+                  ? exp.description.split('\n').filter(isNonEmptyLine).map((line, lineIndex) => (
                     <Text key={`work-desc-${index}-${lineIndex}`} style={styles.bodyText}>
                       {line}
                     </Text>
