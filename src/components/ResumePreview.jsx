@@ -1,26 +1,76 @@
 import { useResume } from '../context/ResumeContext';
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
+
+// Keep preview URLs alive longer so users can read/open the new tab reliably.
+const PREVIEW_URL_REVOKE_DELAY_MS = 60_000;
+// Download URLs can be revoked quickly after the browser starts the file save.
+const DOWNLOAD_URL_REVOKE_DELAY_MS = 5000;
 
 export default function ResumePreview() {
   const { resume } = useResume();
   const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
-  const resumeRef = useRef(null);
+  const [dlMenuOpen, setDlMenuOpen] = useState(false);
+  const dlMenuRef = useRef(null);
 
-  const handleDownloadPDF = () => {
-    const element = resumeRef.current;
-    if (!element) return;
+  // Close the dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (dlMenuRef.current && !dlMenuRef.current.contains(e.target)) {
+        setDlMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
-    import('html2pdf.js').then(({ default: html2pdf }) => {
-      const opt = {
-        margin: [10, 10, 10, 10],
-        filename: `${personalInfo.fullName || 'resume'}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-      };
-      html2pdf().set(opt).from(element).save();
-    });
+  const buildResumePdfBlob = async ({ singlePage }) => {
+    const [{ pdf }, { default: ResumePdfDocument }] = await Promise.all([
+      import('@react-pdf/renderer'),
+      import('./pdf/ResumePdfDocument'),
+    ]);
+    const doc = <ResumePdfDocument resume={resume} singlePage={singlePage} />;
+    return pdf(doc).toBlob();
+  };
+
+  const openPreviewFromBlob = (blob) => {
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank', 'noopener,noreferrer');
+    setTimeout(() => URL.revokeObjectURL(blobUrl), PREVIEW_URL_REVOKE_DELAY_MS);
+  };
+
+  const downloadBlob = (blob, filename) => {
+    const blobUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = blobUrl;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), DOWNLOAD_URL_REVOKE_DELAY_MS);
+  };
+
+  const handleDownloadMultiPage = async () => {
+    setDlMenuOpen(false);
+    const blob = await buildResumePdfBlob({ singlePage: false });
+    downloadBlob(blob, `${personalInfo.fullName || 'resume'}.pdf`);
+  };
+
+  const handleDownloadSinglePage = async () => {
+    setDlMenuOpen(false);
+    const blob = await buildResumePdfBlob({ singlePage: true });
+    downloadBlob(blob, `${personalInfo.fullName || 'resume'}.pdf`);
+  };
+
+  const handlePreviewPDF = async () => {
+    setDlMenuOpen(false);
+    const blob = await buildResumePdfBlob({ singlePage: true });
+    openPreviewFromBlob(blob);
+  };
+
+  const handlePreviewMultiPage = async () => {
+    setDlMenuOpen(false);
+    const blob = await buildResumePdfBlob({ singlePage: false });
+    openPreviewFromBlob(blob);
   };
 
   const hasContent = personalInfo.fullName || personalInfo.email;
@@ -29,28 +79,50 @@ export default function ResumePreview() {
     <div className="preview-panel">
       <div className="preview-toolbar">
         <h2 className="preview-title">Live Preview</h2>
-        <button className="btn-download" onClick={handleDownloadPDF} disabled={!hasContent}>
-          ⬇ Download PDF
-        </button>
+        <div className="preview-toolbar-actions">
+          <button className="btn-preview" onClick={handlePreviewPDF} disabled={!hasContent}>
+            👁 Preview PDF (Single Page)
+          </button>
+          <div className="btn-download-group" ref={dlMenuRef}>
+            <button className="btn-download" onClick={handleDownloadSinglePage} disabled={!hasContent}>
+              ⬇ Download PDF (Single Page)
+            </button>
+            <button
+              className="btn-download btn-download-arrow"
+              onClick={() => setDlMenuOpen(o => !o)}
+              disabled={!hasContent}
+              aria-label="More download options"
+            >
+              ▾
+            </button>
+            {dlMenuOpen && (
+              <div className="download-menu">
+                <button onClick={handleDownloadSinglePage}>📄 Single-Page PDF (Default)</button>
+                <button onClick={handleDownloadMultiPage}>📑 Multi-Page PDF</button>
+                <button onClick={handlePreviewMultiPage}>👁 Multi-Page Preview</button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
       <div className="resume-paper-wrapper">
-        <div className="resume-paper" ref={resumeRef}>
+        <div className="resume-paper">
           {/* Header */}
           <div className="resume-header">
             {personalInfo.fullName && <h1 className="resume-name">{personalInfo.fullName}</h1>}
             {personalInfo.jobTitle && <p className="resume-job-title">{personalInfo.jobTitle}</p>}
             <div className="resume-contact">
-              {personalInfo.email && <span>✉ {personalInfo.email}</span>}
-              {personalInfo.phone && <span>📞 {personalInfo.phone}</span>}
-              {personalInfo.location && <span>📍 {personalInfo.location}</span>}
+              {personalInfo.email && <span>{personalInfo.email}</span>}
+              {personalInfo.phone && <span>{personalInfo.phone}</span>}
+              {personalInfo.location && <span>{personalInfo.location}</span>}
               {personalInfo.linkedin && (
                 <span>
-                  <a href={personalInfo.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>
+                  <a href={personalInfo.linkedin} target="_blank" rel="noreferrer">{personalInfo.linkedin}</a>
                 </span>
               )}
               {personalInfo.github && (
                 <span>
-                  <a href={personalInfo.github} target="_blank" rel="noreferrer">GitHub/Portfolio</a>
+                  <a href={personalInfo.github} target="_blank" rel="noreferrer">{personalInfo.github}</a>
                 </span>
               )}
             </div>
@@ -117,11 +189,7 @@ export default function ResumePreview() {
           {skills.length > 0 && (
             <section className="resume-section">
               <h3 className="resume-section-title">Skills</h3>
-              <div className="resume-skills">
-                {skills.map((skill, i) => (
-                  <span className="resume-skill-tag" key={i}>{skill}</span>
-                ))}
-              </div>
+              <p className="resume-skills-plain">{skills.join(' • ')}</p>
             </section>
           )}
 
@@ -132,10 +200,14 @@ export default function ResumePreview() {
               {projects.map((proj, i) => (
                 <div className="resume-entry" key={i}>
                   <div className="resume-entry-header">
-                    <span className="resume-entry-title">{proj.name}</span>
-                    {proj.link && (
-                      <a href={proj.link} className="resume-entry-link" target="_blank" rel="noreferrer">{proj.link}</a>
-                    )}
+                    <div className="resume-proj-name-row">
+                      <span className="resume-entry-title">{proj.name}</span>
+                      {proj.link && (
+                        <a href={proj.link} className="resume-entry-link" target="_blank" rel="noreferrer">
+                          {proj.link}
+                        </a>
+                      )}
+                    </div>
                   </div>
                   {proj.technologies && <p className="resume-entry-location"><em>Technologies: {proj.technologies}</em></p>}
                   {proj.description && <p className="resume-proj-desc">{proj.description}</p>}
