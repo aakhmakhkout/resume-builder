@@ -7,6 +7,7 @@ const AVAIL_H_PX = (297 - 2 * 12.7) * MM_TO_PX; // ≈ 1026 px
 const AVAIL_W_PX = (210 - 2 * 12.7) * MM_TO_PX; // ≈ 698 px
 const MIN_FONT_SCALE = 0.60; // won't reduce below 6 pt for a 10 pt base
 const SINGLE_PAGE_SAFETY = 0.985;
+const SINGLE_PAGE_FIT_THRESHOLD = 0.995;
 
 export default function ResumePreview() {
   const { resume } = useResume();
@@ -45,7 +46,7 @@ export default function ResumePreview() {
     let scale = 1;
     for (let i = 0; i < 8; i++) {
       const estimatedPdfHeight = getEstimatedPdfHeight(element);
-      if (estimatedPdfHeight <= AVAIL_H_PX * 0.995) break;
+      if (estimatedPdfHeight <= AVAIL_H_PX * SINGLE_PAGE_FIT_THRESHOLD) break;
       const requiredShrink = (AVAIL_H_PX / estimatedPdfHeight) * SINGLE_PAGE_SAFETY;
       const next = Math.max(MIN_FONT_SCALE, scale * requiredShrink);
       if (next >= scale) break;
