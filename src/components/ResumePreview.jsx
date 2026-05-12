@@ -1,10 +1,29 @@
 import { useResume } from '../context/ResumeContext';
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
+
+// A4 printable area at 96 dpi (297mm - 2×12.7mm = 271.6mm)
+const MM_TO_PX = 96 / 25.4;
+const AVAIL_H_PX = (297 - 2 * 12.7) * MM_TO_PX; // ≈ 1026 px
+const AVAIL_W_PX = (210 - 2 * 12.7) * MM_TO_PX; // ≈ 698 px
+const MIN_FONT_SCALE = 0.60; // won't reduce below 6 pt for a 10 pt base
 
 export default function ResumePreview() {
   const { resume } = useResume();
   const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
   const resumeRef = useRef(null);
+  const [dlMenuOpen, setDlMenuOpen] = useState(false);
+  const dlMenuRef = useRef(null);
+
+  // Close the dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (dlMenuRef.current && !dlMenuRef.current.contains(e.target)) {
+        setDlMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const getPdfOptions = (filename) => ({
     margin: [12.7, 12.7, 12.7, 12.7],
@@ -15,27 +34,61 @@ export default function ResumePreview() {
     pagebreak: { mode: ['css', 'legacy'] },
   });
 
-  const withPdfElement = (action) => {
+  /**
+   * Calculate the font scale needed to fit everything on one A4 page.
+   * Returns a value between MIN_FONT_SCALE and 1.
+   * element.style.padding must already be '0' before calling.
+   */
+  const calcSinglePageScale = (element) => {
+    const contentH = element.scrollHeight;
+    const contentW = element.offsetWidth > 0 ? element.offsetWidth : AVAIL_W_PX;
+    // How tall the content would be in the PDF (scaled to available width)
+    const heightInPdf = (contentH / contentW) * AVAIL_W_PX;
+    if (heightInPdf <= AVAIL_H_PX) return 1; // already fits
+    const scale = AVAIL_H_PX / heightInPdf;
+    return Math.max(scale, MIN_FONT_SCALE);
+  };
+
+  const withPdfElement = (action, { singlePage = false } = {}) => {
     const element = resumeRef.current;
     if (!element) return;
 
-    const originalPadding = element.style.padding;
+    const origPadding = element.style.padding;
+    const origFontSize = element.style.fontSize;
     element.style.padding = '0';
+
+    let appliedScale = 1;
+    if (singlePage) {
+      appliedScale = calcSinglePageScale(element);
+      if (appliedScale < 1) {
+        element.style.fontSize = `${10 * appliedScale}pt`;
+      }
+    }
 
     import('html2pdf.js')
       .then(({ default: html2pdf }) => {
         const opt = getPdfOptions(`${personalInfo.fullName || 'resume'}.pdf`);
-        return action(html2pdf, opt, element);
+        return action(html2pdf, opt, element, appliedScale);
       })
       .catch(() => {})
       .finally(() => {
-        element.style.padding = originalPadding;
+        element.style.padding = origPadding;
+        element.style.fontSize = origFontSize;
       });
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadMultiPage = () => {
+    setDlMenuOpen(false);
     withPdfElement((html2pdf, opt, element) =>
       html2pdf().set(opt).from(element).save()
+    );
+  };
+
+  const handleDownloadSinglePage = () => {
+    setDlMenuOpen(false);
+    withPdfElement(
+      (html2pdf, opt, element) => html2pdf().set(opt).from(element).save(),
+      { singlePage: true }
     );
   };
 
@@ -57,9 +110,25 @@ export default function ResumePreview() {
           <button className="btn-preview" onClick={handlePreviewPDF} disabled={!hasContent}>
             👁 Preview PDF
           </button>
-          <button className="btn-download" onClick={handleDownloadPDF} disabled={!hasContent}>
-            ⬇ Download PDF
-          </button>
+          <div className="btn-download-group" ref={dlMenuRef}>
+            <button className="btn-download" onClick={handleDownloadMultiPage} disabled={!hasContent}>
+              ⬇ Download PDF
+            </button>
+            <button
+              className="btn-download btn-download-arrow"
+              onClick={() => setDlMenuOpen(o => !o)}
+              disabled={!hasContent}
+              aria-label="More download options"
+            >
+              ▾
+            </button>
+            {dlMenuOpen && (
+              <div className="download-menu">
+                <button onClick={handleDownloadMultiPage}>📑 Multi-Page PDF</button>
+                <button onClick={handleDownloadSinglePage}>📄 Single-Page PDF</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div className="resume-paper-wrapper">
@@ -146,7 +215,7 @@ export default function ResumePreview() {
           {skills.length > 0 && (
             <section className="resume-section">
               <h3 className="resume-section-title">Skills</h3>
-              <p className="resume-skills-plain">{skills.join(', ')}</p>
+              <p className="resume-skills-plain">{skills.join(' • ')}</p>
             </section>
           )}
 
@@ -157,10 +226,14 @@ export default function ResumePreview() {
               {projects.map((proj, i) => (
                 <div className="resume-entry" key={i}>
                   <div className="resume-entry-header">
-                    <span className="resume-entry-title">{proj.name}</span>
-                    {proj.link && (
-                      <a href={proj.link} className="resume-entry-link" target="_blank" rel="noreferrer">{proj.link}</a>
-                    )}
+                    <div className="resume-proj-name-row">
+                      <span className="resume-entry-title">{proj.name}</span>
+                      {proj.link && (
+                        <a href={proj.link} className="resume-entry-link" target="_blank" rel="noreferrer">
+                          {proj.link}
+                        </a>
+                      )}
+                    </div>
                   </div>
                   {proj.technologies && <p className="resume-entry-location"><em>Technologies: {proj.technologies}</em></p>}
                   {proj.description && <p className="resume-proj-desc">{proj.description}</p>}
