@@ -271,7 +271,7 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
             {certifications.map((cert, index) => (
               <View style={styles.entry} key={`cert-${index}`}>
                 <View style={styles.entryHeader}>
-                  {cert.name ? <Text style={styles.entryTitle}>{cert.name}</Text> : <Text />}
+                  {cert.name ? <Text style={styles.entryTitle}>{cert.name}</Text> : null}
                   {cert.date ? <Text style={styles.entryDate}>{cert.date}</Text> : null}
                 </View>
                 {cert.organization ? <Text style={styles.subText}>{cert.organization}</Text> : null}
