@@ -351,6 +351,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   padding: 12px 20px;
   background: #1a1e26;
   border-bottom: 1px solid var(--border);
@@ -493,6 +495,12 @@
     #d1d5db var(--page-height)
   );
   background-size: 100% var(--page-height);
+}
+
+.resume-paper.pdf-export-mode {
+  min-height: unset;
+  height: auto;
+  background-image: none;
 }
 
 .resume-empty-state {
@@ -720,6 +728,18 @@
 }
 
 /* ========== Responsive ========== */
+@media (max-width: 1200px) {
+  .form-panel {
+    width: 48%;
+    min-width: 340px;
+  }
+
+  .preview-toolbar-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
 @media (max-width: 900px) {
   .app-root {
     height: auto;
@@ -751,3 +771,54 @@
   }
 }
 
+@media (max-width: 768px) {
+  .form-panel-header {
+    padding: 16px;
+  }
+
+  .form-section {
+    padding: 16px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-toolbar {
+    padding: 10px 12px;
+  }
+
+  .preview-toolbar-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: stretch;
+  }
+
+  .btn-preview {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+
+  .btn-download-group {
+    flex: 1 1 100%;
+  }
+
+  .btn-download {
+    flex: 1;
+  }
+
+  .resume-paper-wrapper {
+    padding: 10px;
+  }
+
+  .resume-paper {
+    width: 100%;
+    padding: 6mm;
+  }
+
+  .download-menu {
+    left: 0;
+    right: auto;
+    min-width: min(260px, 100%);
+  }
+}

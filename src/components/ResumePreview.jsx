@@ -6,6 +6,7 @@ const MM_TO_PX = 96 / 25.4;
 const AVAIL_H_PX = (297 - 2 * 12.7) * MM_TO_PX; // ≈ 1026 px
 const AVAIL_W_PX = (210 - 2 * 12.7) * MM_TO_PX; // ≈ 698 px
 const MIN_FONT_SCALE = 0.60; // won't reduce below 6 pt for a 10 pt base
+const SINGLE_PAGE_SAFETY = 0.985;
 
 export default function ResumePreview() {
   const { resume } = useResume();
@@ -25,28 +26,33 @@ export default function ResumePreview() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const getPdfOptions = (filename) => ({
+  const getPdfOptions = (filename, { singlePage = false } = {}) => ({
     margin: [12.7, 12.7, 12.7, 12.7],
     filename,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'] },
+    pagebreak: { mode: singlePage ? ['css'] : ['css', 'legacy'] },
   });
 
-  /**
-   * Calculate the font scale needed to fit everything on one A4 page.
-   * Returns a value between MIN_FONT_SCALE and 1.
-   * element.style.padding must already be '0' before calling.
-   */
-  const calcSinglePageScale = (element) => {
+  const getEstimatedPdfHeight = (element) => {
     const contentH = element.scrollHeight;
-    const contentW = element.offsetWidth > 0 ? element.offsetWidth : AVAIL_W_PX;
-    // How tall the content would be in the PDF (scaled to available width)
-    const heightInPdf = (contentH / contentW) * AVAIL_W_PX;
-    if (heightInPdf <= AVAIL_H_PX) return 1; // already fits
-    const scale = AVAIL_H_PX / heightInPdf;
-    return Math.max(scale, MIN_FONT_SCALE);
+    const contentW = element.getBoundingClientRect().width || AVAIL_W_PX;
+    return (contentH / contentW) * AVAIL_W_PX;
+  };
+
+  const calcSinglePageScale = (element) => {
+    let scale = 1;
+    for (let i = 0; i < 8; i++) {
+      const estimatedPdfHeight = getEstimatedPdfHeight(element);
+      if (estimatedPdfHeight <= AVAIL_H_PX * 0.995) break;
+      const requiredShrink = (AVAIL_H_PX / estimatedPdfHeight) * SINGLE_PAGE_SAFETY;
+      const next = Math.max(MIN_FONT_SCALE, scale * requiredShrink);
+      if (next >= scale) break;
+      scale = next;
+      element.style.fontSize = `${10 * scale}pt`;
+    }
+    return scale;
   };
 
   const withPdfElement = (action, { singlePage = false } = {}) => {
@@ -55,6 +61,9 @@ export default function ResumePreview() {
 
     const origPadding = element.style.padding;
     const origFontSize = element.style.fontSize;
+    const hadExportClass = element.classList.contains('pdf-export-mode');
+
+    element.classList.add('pdf-export-mode');
     element.style.padding = '0';
 
     let appliedScale = 1;
@@ -67,13 +76,14 @@ export default function ResumePreview() {
 
     import('html2pdf.js')
       .then(({ default: html2pdf }) => {
-        const opt = getPdfOptions(`${personalInfo.fullName || 'resume'}.pdf`);
+        const opt = getPdfOptions(`${personalInfo.fullName || 'resume'}.pdf`, { singlePage });
         return action(html2pdf, opt, element, appliedScale);
       })
       .catch(() => {})
       .finally(() => {
         element.style.padding = origPadding;
         element.style.fontSize = origFontSize;
+        if (!hadExportClass) element.classList.remove('pdf-export-mode');
       });
   };
 
@@ -93,6 +103,17 @@ export default function ResumePreview() {
   };
 
   const handlePreviewPDF = () => {
+    setDlMenuOpen(false);
+    withPdfElement((html2pdf, opt, element) =>
+      html2pdf().set(opt).from(element).outputPdf('bloburl').then((blobUrl) => {
+        window.open(blobUrl, '_blank');
+      })
+    , { singlePage: true }
+    );
+  };
+
+  const handlePreviewMultiPage = () => {
+    setDlMenuOpen(false);
     withPdfElement((html2pdf, opt, element) =>
       html2pdf().set(opt).from(element).outputPdf('bloburl').then((blobUrl) => {
         window.open(blobUrl, '_blank');
@@ -108,11 +129,11 @@ export default function ResumePreview() {
         <h2 className="preview-title">Live Preview</h2>
         <div className="preview-toolbar-actions">
           <button className="btn-preview" onClick={handlePreviewPDF} disabled={!hasContent}>
-            👁 Preview PDF
+            👁 Preview PDF (Single Page)
           </button>
           <div className="btn-download-group" ref={dlMenuRef}>
-            <button className="btn-download" onClick={handleDownloadMultiPage} disabled={!hasContent}>
-              ⬇ Download PDF
+            <button className="btn-download" onClick={handleDownloadSinglePage} disabled={!hasContent}>
+              ⬇ Download PDF (Single Page)
             </button>
             <button
               className="btn-download btn-download-arrow"
@@ -124,8 +145,9 @@ export default function ResumePreview() {
             </button>
             {dlMenuOpen && (
               <div className="download-menu">
+                <button onClick={handleDownloadSinglePage}>📄 Single-Page PDF (Default)</button>
                 <button onClick={handleDownloadMultiPage}>📑 Multi-Page PDF</button>
-                <button onClick={handleDownloadSinglePage}>📄 Single-Page PDF</button>
+                <button onClick={handlePreviewMultiPage}>👁 Multi-Page Preview</button>
               </div>
             )}
           </div>

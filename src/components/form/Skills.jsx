@@ -5,6 +5,7 @@ export default function Skills() {
   const { resume, addSkill, removeSkill, reorderSkills } = useResume();
   const [input, setInput] = useState('');
   const [dragOverIdx, setDragOverIdx] = useState(null);
+  const [draggingIdx, setDraggingIdx] = useState(null);
   const dragIdxRef = useRef(null);
 
   const handleAdd = () => {
@@ -24,6 +25,7 @@ export default function Skills() {
 
   const handleDragStart = (e, i) => {
     dragIdxRef.current = i;
+    setDraggingIdx(i);
     e.dataTransfer.effectAllowed = 'move';
   };
 
@@ -48,6 +50,7 @@ export default function Skills() {
   const handleDragEnd = () => {
     dragIdxRef.current = null;
     setDragOverIdx(null);
+    setDraggingIdx(null);
   };
 
   return (
@@ -69,7 +72,7 @@ export default function Skills() {
       <div className="skills-tags">
         {resume.skills.map((skill, i) => (
           <span
-            className={`skill-tag${dragOverIdx === i && dragIdxRef.current !== i ? ' skill-tag--drop-target' : ''}`}
+            className={`skill-tag${dragOverIdx === i && draggingIdx !== i ? ' skill-tag--drop-target' : ''}`}
             key={`${skill}-${i}`}
             draggable
             onDragStart={e => handleDragStart(e, i)}
