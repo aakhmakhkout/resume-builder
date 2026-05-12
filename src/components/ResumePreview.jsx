@@ -49,7 +49,7 @@ export default function ResumePreview() {
     downloadBlob(blob, `${personalInfo.fullName || 'resume'}.pdf`);
   };
 
-  const hasContent = Boolean(personalInfo.fullName || personalInfo.email);
+  const hasContent = personalInfo.fullName || personalInfo.email;
 
   return (
     <div className="preview-panel">
