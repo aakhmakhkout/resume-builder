@@ -90,6 +90,10 @@ export function ResumeProvider({ children }) {
     setResume(prev => ({ ...prev, skills: prev.skills.filter(s => s !== skill) }));
   };
 
+  const reorderSkills = (newOrder) => {
+    setResume(prev => ({ ...prev, skills: newOrder }));
+  };
+
   return (
     <ResumeContext.Provider value={{
       resume,
@@ -99,6 +103,7 @@ export function ResumeProvider({ children }) {
       removeEntry,
       addSkill,
       removeSkill,
+      reorderSkills,
     }}>
       {children}
     </ResumeContext.Provider>
