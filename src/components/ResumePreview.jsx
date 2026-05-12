@@ -1,18 +1,9 @@
 import { useResume } from '../context/ResumeContext';
 import { useRef, useState, useEffect } from 'react';
 
-// A4 printable area at 96 dpi (297mm - 2×12.7mm = 271.6mm)
-const MM_TO_PX = 96 / 25.4;
-const AVAIL_H_PX = (297 - 2 * 12.7) * MM_TO_PX; // ≈ 1026 px
-const AVAIL_W_PX = (210 - 2 * 12.7) * MM_TO_PX; // ≈ 698 px
-const MIN_FONT_SCALE = 0.60; // won't reduce below 6 pt for a 10 pt base
-const SINGLE_PAGE_SAFETY = 0.985;
-const SINGLE_PAGE_FIT_THRESHOLD = 0.995;
-
 export default function ResumePreview() {
   const { resume } = useResume();
   const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
-  const resumeRef = useRef(null);
   const [dlMenuOpen, setDlMenuOpen] = useState(false);
   const dlMenuRef = useRef(null);
 
@@ -27,99 +18,54 @@ export default function ResumePreview() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const getPdfOptions = (filename, { singlePage = false } = {}) => ({
-    margin: [12.7, 12.7, 12.7, 12.7],
-    filename,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: singlePage ? ['css'] : ['css', 'legacy'] },
-  });
-
-  const getEstimatedPdfHeight = (element) => {
-    const contentH = element.scrollHeight;
-    const contentW = element.getBoundingClientRect().width || AVAIL_W_PX;
-    return (contentH / contentW) * AVAIL_W_PX;
+  const buildResumePdfBlob = async ({ singlePage }) => {
+    const [{ pdf }, { default: ResumePdfDocument }] = await Promise.all([
+      import('@react-pdf/renderer'),
+      import('./pdf/ResumePdfDocument'),
+    ]);
+    const doc = <ResumePdfDocument resume={resume} singlePage={singlePage} />;
+    return pdf(doc).toBlob();
   };
 
-  const calcSinglePageScale = (element) => {
-    let scale = 1;
-    for (let i = 0; i < 8; i++) {
-      const estimatedPdfHeight = getEstimatedPdfHeight(element);
-      if (estimatedPdfHeight <= AVAIL_H_PX * SINGLE_PAGE_FIT_THRESHOLD) break;
-      const requiredShrink = (AVAIL_H_PX / estimatedPdfHeight) * SINGLE_PAGE_SAFETY;
-      const next = Math.max(MIN_FONT_SCALE, scale * requiredShrink);
-      if (next >= scale) break;
-      scale = next;
-      element.style.fontSize = `${10 * scale}pt`;
-    }
-    return scale;
+  const openPreviewFromBlob = (blob) => {
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank', 'noopener,noreferrer');
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
   };
 
-  const withPdfElement = (action, { singlePage = false } = {}) => {
-    const element = resumeRef.current;
-    if (!element) return;
-
-    const origPadding = element.style.padding;
-    const origFontSize = element.style.fontSize;
-    const hadExportClass = element.classList.contains('pdf-export-mode');
-
-    element.classList.add('pdf-export-mode');
-    element.style.padding = '0';
-
-    let appliedScale = 1;
-    if (singlePage) {
-      appliedScale = calcSinglePageScale(element);
-      if (appliedScale < 1) {
-        element.style.fontSize = `${10 * appliedScale}pt`;
-      }
-    }
-
-    import('html2pdf.js')
-      .then(({ default: html2pdf }) => {
-        const opt = getPdfOptions(`${personalInfo.fullName || 'resume'}.pdf`, { singlePage });
-        return action(html2pdf, opt, element, appliedScale);
-      })
-      .catch(() => {})
-      .finally(() => {
-        element.style.padding = origPadding;
-        element.style.fontSize = origFontSize;
-        if (!hadExportClass) element.classList.remove('pdf-export-mode');
-      });
+  const downloadBlob = (blob, filename) => {
+    const blobUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = blobUrl;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
   };
 
-  const handleDownloadMultiPage = () => {
+  const handleDownloadMultiPage = async () => {
     setDlMenuOpen(false);
-    withPdfElement((html2pdf, opt, element) =>
-      html2pdf().set(opt).from(element).save()
-    );
+    const blob = await buildResumePdfBlob({ singlePage: false });
+    downloadBlob(blob, `${personalInfo.fullName || 'resume'}.pdf`);
   };
 
-  const handleDownloadSinglePage = () => {
+  const handleDownloadSinglePage = async () => {
     setDlMenuOpen(false);
-    withPdfElement(
-      (html2pdf, opt, element) => html2pdf().set(opt).from(element).save(),
-      { singlePage: true }
-    );
+    const blob = await buildResumePdfBlob({ singlePage: true });
+    downloadBlob(blob, `${personalInfo.fullName || 'resume'}.pdf`);
   };
 
-  const handlePreviewPDF = () => {
+  const handlePreviewPDF = async () => {
     setDlMenuOpen(false);
-    withPdfElement((html2pdf, opt, element) =>
-      html2pdf().set(opt).from(element).outputPdf('bloburl').then((blobUrl) => {
-        window.open(blobUrl, '_blank');
-      })
-    , { singlePage: true }
-    );
+    const blob = await buildResumePdfBlob({ singlePage: true });
+    openPreviewFromBlob(blob);
   };
 
-  const handlePreviewMultiPage = () => {
+  const handlePreviewMultiPage = async () => {
     setDlMenuOpen(false);
-    withPdfElement((html2pdf, opt, element) =>
-      html2pdf().set(opt).from(element).outputPdf('bloburl').then((blobUrl) => {
-        window.open(blobUrl, '_blank');
-      })
-    );
+    const blob = await buildResumePdfBlob({ singlePage: false });
+    openPreviewFromBlob(blob);
   };
 
   const hasContent = personalInfo.fullName || personalInfo.email;
@@ -155,7 +101,7 @@ export default function ResumePreview() {
         </div>
       </div>
       <div className="resume-paper-wrapper">
-        <div className="resume-paper" ref={resumeRef}>
+        <div className="resume-paper">
           {/* Header */}
           <div className="resume-header">
             {personalInfo.fullName && <h1 className="resume-name">{personalInfo.fullName}</h1>}
