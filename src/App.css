@@ -369,19 +369,40 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
-/* ── Download button group (split button) ── */
-.btn-download-group {
-  position: relative;
+.export-mode-selector {
   display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid #343a47;
+  border-radius: 8px;
+  background: #171c28;
+}
+
+.export-mode-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #c5cce0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+.export-mode-option input {
+  margin: 0;
+  accent-color: var(--blue);
 }
 
 .btn-download {
   background: #1f4f3a;
   color: #6ed8a8;
   border: 1px solid #2e7a5c;
-  border-radius: 8px 0 0 8px;
+  border-radius: 8px;
   padding: 8px 16px;
   font-size: 0.85rem;
   font-weight: 600;
@@ -391,53 +412,9 @@
   white-space: nowrap;
 }
 
-.btn-download-arrow {
-  border-radius: 0 8px 8px 0;
-  border-left: 1px solid #2a6b4d;
-  padding: 8px 10px;
-}
-
 .btn-download:hover:not(:disabled) { background: #275f47; border-color: #3a9e74; }
 .btn-download:active:not(:disabled) { transform: scale(0.97); }
 .btn-download:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.download-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  background: #1e2330;
-  border: 1px solid #3a3f50;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  overflow: hidden;
-  z-index: 100;
-  min-width: 180px;
-  animation: menuIn 0.12s ease;
-}
-
-@keyframes menuIn {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.download-menu button {
-  display: block;
-  width: 100%;
-  padding: 10px 16px;
-  background: none;
-  border: none;
-  color: #c5cce0;
-  font-size: 0.84rem;
-  font-weight: 500;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.download-menu button:hover {
-  background: #2a3049;
-  color: #6ed8a8;
-}
 
 /* ── Preview button ── */
 .btn-preview {
@@ -526,14 +503,16 @@
   font-weight: 700;
   color: #111;
   letter-spacing: -0.5px;
-  line-height: 1.2;
+  line-height: 1.16;
+  margin: 0;
 }
 
 .resume-job-title {
   font-size: 1.05em;
   color: #1d4ed8;
   font-weight: 500;
-  margin-top: 2px;
+  line-height: 1.35;
+  margin: 6px 0 0;
 }
 
 .resume-contact {
@@ -541,7 +520,7 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 4px 12px;
-  margin-top: 5px;
+  margin-top: 8px;
   font-size: 0.82em;
   color: #4b5563;
 }
@@ -799,12 +778,9 @@
     text-align: center;
   }
 
-  .btn-download-group {
-    flex: 1 1 100%;
-  }
-
   .btn-download {
-    flex: 1;
+    flex: 1 1 100%;
+    text-align: center;
   }
 
   .resume-paper-wrapper {
@@ -816,9 +792,8 @@
     padding: 6mm;
   }
 
-  .download-menu {
-    left: 0;
-    right: auto;
-    min-width: min(260px, 100%);
+  .export-mode-selector {
+    width: 100%;
+    justify-content: space-between;
   }
 }

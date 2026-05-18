@@ -1,5 +1,5 @@
 import { useResume } from '../context/ResumeContext';
-import { useRef, useState, useEffect } from 'react';
+import { useState } from 'react';
 
 // Keep preview URLs alive longer so users can read/open the new tab reliably.
 const PREVIEW_URL_REVOKE_DELAY_MS = 60_000;
@@ -9,19 +9,9 @@ const DOWNLOAD_URL_REVOKE_DELAY_MS = 5000;
 export default function ResumePreview() {
   const { resume } = useResume();
   const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
-  const [dlMenuOpen, setDlMenuOpen] = useState(false);
-  const dlMenuRef = useRef(null);
-
-  // Close the dropdown when clicking outside
-  useEffect(() => {
-    const handler = (e) => {
-      if (dlMenuRef.current && !dlMenuRef.current.contains(e.target)) {
-        setDlMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  const [exportMode, setExportMode] = useState('single');
+  const isSinglePage = exportMode === 'single';
+  const selectedModeLabel = isSinglePage ? 'Single Page' : 'Multi-Page';
 
   const buildResumePdfBlob = async ({ singlePage }) => {
     const [{ pdf }, { default: ResumePdfDocument }] = await Promise.all([
@@ -49,28 +39,14 @@ export default function ResumePreview() {
     setTimeout(() => URL.revokeObjectURL(blobUrl), DOWNLOAD_URL_REVOKE_DELAY_MS);
   };
 
-  const handleDownloadMultiPage = async () => {
-    setDlMenuOpen(false);
-    const blob = await buildResumePdfBlob({ singlePage: false });
-    downloadBlob(blob, `${personalInfo.fullName || 'resume'}.pdf`);
-  };
-
-  const handleDownloadSinglePage = async () => {
-    setDlMenuOpen(false);
-    const blob = await buildResumePdfBlob({ singlePage: true });
-    downloadBlob(blob, `${personalInfo.fullName || 'resume'}.pdf`);
-  };
-
   const handlePreviewPDF = async () => {
-    setDlMenuOpen(false);
-    const blob = await buildResumePdfBlob({ singlePage: true });
+    const blob = await buildResumePdfBlob({ singlePage: isSinglePage });
     openPreviewFromBlob(blob);
   };
 
-  const handlePreviewMultiPage = async () => {
-    setDlMenuOpen(false);
-    const blob = await buildResumePdfBlob({ singlePage: false });
-    openPreviewFromBlob(blob);
+  const handleDownloadPDF = async () => {
+    const blob = await buildResumePdfBlob({ singlePage: isSinglePage });
+    downloadBlob(blob, `${personalInfo.fullName || 'resume'}.pdf`);
   };
 
   const hasContent = personalInfo.fullName || personalInfo.email;
@@ -80,29 +56,34 @@ export default function ResumePreview() {
       <div className="preview-toolbar">
         <h2 className="preview-title">Live Preview</h2>
         <div className="preview-toolbar-actions">
-          <button className="btn-preview" onClick={handlePreviewPDF} disabled={!hasContent}>
-            👁 Preview PDF (Single Page)
-          </button>
-          <div className="btn-download-group" ref={dlMenuRef}>
-            <button className="btn-download" onClick={handleDownloadSinglePage} disabled={!hasContent}>
-              ⬇ Download PDF (Single Page)
-            </button>
-            <button
-              className="btn-download btn-download-arrow"
-              onClick={() => setDlMenuOpen(o => !o)}
-              disabled={!hasContent}
-              aria-label="More download options"
-            >
-              ▾
-            </button>
-            {dlMenuOpen && (
-              <div className="download-menu">
-                <button onClick={handleDownloadSinglePage}>📄 Single-Page PDF (Default)</button>
-                <button onClick={handleDownloadMultiPage}>📑 Multi-Page PDF</button>
-                <button onClick={handlePreviewMultiPage}>👁 Multi-Page Preview</button>
-              </div>
-            )}
+          <div className="export-mode-selector" role="radiogroup" aria-label="PDF export mode">
+            <label className="export-mode-option">
+              <input
+                type="radio"
+                name="export-mode"
+                value="single"
+                checked={isSinglePage}
+                onChange={() => setExportMode('single')}
+              />
+              Single Page
+            </label>
+            <label className="export-mode-option">
+              <input
+                type="radio"
+                name="export-mode"
+                value="multi"
+                checked={!isSinglePage}
+                onChange={() => setExportMode('multi')}
+              />
+              Multi-Page
+            </label>
           </div>
+          <button className="btn-preview" onClick={handlePreviewPDF} disabled={!hasContent}>
+            👁 Preview PDF ({selectedModeLabel})
+          </button>
+          <button className="btn-download" onClick={handleDownloadPDF} disabled={!hasContent}>
+            ⬇ Download PDF ({selectedModeLabel})
+          </button>
         </div>
       </div>
       <div className="resume-paper-wrapper">

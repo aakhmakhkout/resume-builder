@@ -3,6 +3,89 @@ import { Document, Page, Text, View, Link, StyleSheet } from '@react-pdf/rendere
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const isNonEmptyLine = (line) => line.trim();
 
+const LAYOUT_PROFILES = {
+  compact: {
+    pagePaddingTopBottom: 24,
+    pagePaddingHorizontal: 24,
+    baseFontSize: 9.2,
+    baseLineHeight: 1.38,
+    headerBorderWidth: 1,
+    headerPaddingBottom: 6,
+    headerMarginBottom: 8,
+    nameFontSize: 17,
+    nameLineHeight: 1.16,
+    nameMarginBottom: 3.2,
+    jobTitleFontSize: 9.4,
+    jobTitleLineHeight: 1.32,
+    jobTitleMarginBottom: 4.2,
+    contactFontSize: 7.5,
+    contactLineHeight: 1.35,
+    contactMarginTop: 2,
+    sectionMarginBottom: 6,
+    sectionTitleFontSize: 8,
+    sectionTitlePaddingBottom: 1.8,
+    sectionTitleMarginBottom: 4,
+    sectionTitleLetterSpacing: 0.58,
+    entryMarginBottom: 4.8,
+    entryHeaderGap: 6,
+    entryHeadingGap: 1.6,
+    entryTitleSize: 8.7,
+    entrySubtitleSize: 8.7,
+    entryDateSize: 7.4,
+    subTextSize: 7.4,
+    subTextMarginTop: 0.8,
+    bodyTextSize: 8.2,
+    bodyTextMarginTop: 1.4,
+    bodyTextLineHeight: 1.34,
+    projectLinkSize: 7.1,
+    projectLinkMarginTop: 0.8,
+    targetLines: 74,
+    minScale: 0.5,
+    maxScale: 1,
+    headingMinPresenceAhead: 16,
+  },
+  print: {
+    pagePaddingTopBottom: 38,
+    pagePaddingHorizontal: 38,
+    baseFontSize: 10.4,
+    baseLineHeight: 1.56,
+    headerBorderWidth: 1.2,
+    headerPaddingBottom: 9,
+    headerMarginBottom: 12,
+    nameFontSize: 22,
+    nameLineHeight: 1.16,
+    nameMarginBottom: 4.8,
+    jobTitleFontSize: 11.2,
+    jobTitleLineHeight: 1.3,
+    jobTitleMarginBottom: 5.8,
+    contactFontSize: 8.6,
+    contactLineHeight: 1.4,
+    contactMarginTop: 2.6,
+    sectionMarginBottom: 10,
+    sectionTitleFontSize: 9.2,
+    sectionTitlePaddingBottom: 2.1,
+    sectionTitleMarginBottom: 5.6,
+    sectionTitleLetterSpacing: 0.74,
+    entryMarginBottom: 7.2,
+    entryHeaderGap: 9,
+    entryHeadingGap: 2.2,
+    entryTitleSize: 9.8,
+    entrySubtitleSize: 9.8,
+    entryDateSize: 8.4,
+    subTextSize: 8.4,
+    subTextMarginTop: 1,
+    bodyTextSize: 9.2,
+    bodyTextMarginTop: 2.2,
+    bodyTextLineHeight: 1.47,
+    projectLinkSize: 8.1,
+    projectLinkMarginTop: 1.2,
+    targetLines: 88,
+    minScale: 1,
+    maxScale: 1,
+    headingMinPresenceAhead: 24,
+  },
+};
+
 const estimateWrappedLines = (text, charsPerLine = 85) => {
   if (!text) return 0;
   return text
@@ -53,107 +136,110 @@ const estimateResumeLines = (resume) => {
   return lines;
 };
 
-const getPdfScale = (resume, { singlePage }) => {
-  if (!singlePage) return 1.08;
+const getPdfScale = (resume, { singlePage, profile }) => {
+  if (!singlePage) return 1;
   const estimatedLines = estimateResumeLines(resume);
-  const targetLines = 78;
-  if (!estimatedLines || estimatedLines <= targetLines) return 1;
-  return clamp((targetLines / estimatedLines) * 0.98, 0.58, 1);
+  const targetLines = profile.targetLines;
+  if (!estimatedLines || estimatedLines <= targetLines) return profile.maxScale;
+  return clamp((targetLines / estimatedLines) * 0.99, profile.minScale, profile.maxScale);
 };
 
-const createStyles = (scale) =>
+const createStyles = (scale, profile) =>
   StyleSheet.create({
     page: {
-      paddingTop: 36,
-      paddingBottom: 36,
-      paddingHorizontal: 36,
+      paddingTop: profile.pagePaddingTopBottom * scale,
+      paddingBottom: profile.pagePaddingTopBottom * scale,
+      paddingHorizontal: profile.pagePaddingHorizontal * scale,
       fontFamily: 'Times-Roman',
-      fontSize: 10 * scale,
+      fontSize: profile.baseFontSize * scale,
       color: '#111111',
-      lineHeight: 1.5,
+      lineHeight: profile.baseLineHeight,
     },
     header: {
       textAlign: 'center',
-      borderBottomWidth: 1.2,
+      borderBottomWidth: profile.headerBorderWidth,
       borderBottomColor: '#1d4ed8',
-      paddingBottom: 8 * scale,
-      marginBottom: 10 * scale,
+      paddingBottom: profile.headerPaddingBottom * scale,
+      marginBottom: profile.headerMarginBottom * scale,
     },
     name: {
-      fontSize: 20 * scale,
+      fontSize: profile.nameFontSize * scale,
       fontFamily: 'Times-Bold',
-      marginBottom: 1 * scale,
+      lineHeight: profile.nameLineHeight,
+      marginBottom: profile.nameMarginBottom * scale,
     },
     jobTitle: {
-      fontSize: 10.5 * scale,
+      fontSize: profile.jobTitleFontSize * scale,
       color: '#1d4ed8',
-      marginBottom: 2 * scale,
+      lineHeight: profile.jobTitleLineHeight,
+      marginBottom: profile.jobTitleMarginBottom * scale,
     },
     contactText: {
-      fontSize: 8.2 * scale,
+      fontSize: profile.contactFontSize * scale,
       color: '#4b5563',
-      lineHeight: 1.35,
+      lineHeight: profile.contactLineHeight,
+      marginTop: profile.contactMarginTop * scale,
     },
     section: {
-      marginBottom: 8 * scale,
+      marginBottom: profile.sectionMarginBottom * scale,
     },
     sectionTitle: {
-      fontSize: 8.8 * scale,
+      fontSize: profile.sectionTitleFontSize * scale,
       fontFamily: 'Times-Bold',
       textTransform: 'uppercase',
       color: '#1d4ed8',
       borderBottomWidth: 0.7,
       borderBottomColor: '#bfdbfe',
-      paddingBottom: 2 * scale,
-      marginBottom: 5 * scale,
-      letterSpacing: 0.7 * scale,
+      paddingBottom: profile.sectionTitlePaddingBottom * scale,
+      marginBottom: profile.sectionTitleMarginBottom * scale,
+      letterSpacing: profile.sectionTitleLetterSpacing * scale,
     },
     entry: {
-      marginBottom: 6 * scale,
+      marginBottom: profile.entryMarginBottom * scale,
     },
     entryHeader: {
       display: 'flex',
       flexDirection: 'row',
       justifyContent: 'space-between',
-      gap: 8 * scale,
+      gap: profile.entryHeaderGap * scale,
     },
     entryHeadingWrap: {
       display: 'flex',
       flexDirection: 'row',
       flexWrap: 'wrap',
       flexGrow: 1,
-      gap: 2 * scale,
+      gap: profile.entryHeadingGap * scale,
     },
     entryTitle: {
       fontFamily: 'Times-Bold',
-      fontSize: 9.5 * scale,
+      fontSize: profile.entryTitleSize * scale,
     },
     entrySubtitle: {
-      fontSize: 9.5 * scale,
+      fontSize: profile.entrySubtitleSize * scale,
       color: '#374151',
     },
     entryDate: {
-      fontSize: 8.2 * scale,
+      fontSize: profile.entryDateSize * scale,
       color: '#6b7280',
       textAlign: 'right',
       flexShrink: 0,
     },
     subText: {
-      fontSize: 8.2 * scale,
+      fontSize: profile.subTextSize * scale,
       color: '#6b7280',
-      marginTop: 1 * scale,
+      marginTop: profile.subTextMarginTop * scale,
     },
     bodyText: {
-      fontSize: 9 * scale,
+      fontSize: profile.bodyTextSize * scale,
       color: '#374151',
-      marginTop: 2 * scale,
-      lineHeight: 1.45,
+      marginTop: profile.bodyTextMarginTop * scale,
+      lineHeight: profile.bodyTextLineHeight,
     },
     projectLink: {
-      fontSize: 7.8 * scale,
+      fontSize: profile.projectLinkSize * scale,
       color: '#1d4ed8',
       textDecoration: 'none',
-      marginTop: 1 * scale,
+      marginTop: profile.projectLinkMarginTop * scale,
     },
   });
 
@@ -179,8 +265,10 @@ const ContactText = ({ personalInfo, styles }) => {
 
 export default function ResumePdfDocument({ resume, singlePage = true }) {
   const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
-  const scale = getPdfScale(resume, { singlePage });
-  const styles = createStyles(scale);
+  const profile = singlePage ? LAYOUT_PROFILES.compact : LAYOUT_PROFILES.print;
+  const scale = getPdfScale(resume, { singlePage, profile });
+  const styles = createStyles(scale, profile);
+  const headingMinPresenceAhead = profile.headingMinPresenceAhead * scale;
 
   return (
     <Document title={`${personalInfo.fullName || 'Resume'} Resume`}>
@@ -193,14 +281,14 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
 
         {personalInfo.summary ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Professional Summary</Text>
+            <Text style={styles.sectionTitle} minPresenceAhead={headingMinPresenceAhead}>Professional Summary</Text>
             <Text style={styles.bodyText}>{personalInfo.summary}</Text>
           </View>
         ) : null}
 
         {workExperience.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Work Experience</Text>
+            <Text style={styles.sectionTitle} minPresenceAhead={headingMinPresenceAhead}>Work Experience</Text>
             {workExperience.map((exp, index) => (
               <View style={styles.entry} key={`work-${index}`}>
                 <View style={styles.entryHeader}>
@@ -227,7 +315,7 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
 
         {education.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Education</Text>
+            <Text style={styles.sectionTitle} minPresenceAhead={headingMinPresenceAhead}>Education</Text>
             {education.map((edu, index) => (
               <View style={styles.entry} key={`edu-${index}`}>
                 <View style={styles.entryHeader}>
@@ -251,14 +339,14 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
 
         {skills.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Skills</Text>
+            <Text style={styles.sectionTitle} minPresenceAhead={headingMinPresenceAhead}>Skills</Text>
             <Text style={styles.bodyText}>{skills.join(' • ')}</Text>
           </View>
         ) : null}
 
         {projects.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Projects</Text>
+            <Text style={styles.sectionTitle} minPresenceAhead={headingMinPresenceAhead}>Projects</Text>
             {projects.map((proj, index) => (
               <View style={styles.entry} key={`proj-${index}`}>
                 {proj.name ? <Text style={styles.entryTitle}>{proj.name}</Text> : null}
@@ -272,7 +360,7 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
 
         {certifications.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Certifications</Text>
+            <Text style={styles.sectionTitle} minPresenceAhead={headingMinPresenceAhead}>Certifications</Text>
             {certifications.map((cert, index) => (
               <View style={styles.entry} key={`cert-${index}`}>
                 <View style={styles.entryHeader}>
@@ -287,7 +375,7 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
 
         {languages.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Languages</Text>
+            <Text style={styles.sectionTitle} minPresenceAhead={headingMinPresenceAhead}>Languages</Text>
             <Text style={styles.bodyText}>
               {languages.map((lang) => `${lang.language}${lang.proficiency ? ` (${lang.proficiency})` : ''}`).join(' • ')}
             </Text>
