@@ -102,13 +102,13 @@ const createStyles = (scale) =>
     name: {
       fontSize: 20 * scale,
       fontFamily: 'Times-Bold',
-      lineHeight: 24 * scale,
+      lineHeight: 1.2,
       marginBottom: 3 * scale,
     },
     jobTitle: {
       fontSize: 10.5 * scale,
       color: '#1d4ed8',
-      lineHeight: 13 * scale,
+      lineHeight: 1.24,
       marginBottom: 4 * scale,
     },
     contactText: {
