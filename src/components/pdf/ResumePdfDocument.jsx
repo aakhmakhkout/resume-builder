@@ -85,7 +85,7 @@ const getPdfScale = (resume, { singlePage }) => {
   if (estimatedLines <= 160) return 0.95;
   if (estimatedLines <= 240) return 0.90;
   if (estimatedLines <= 320) return 0.85;
-  return clamp(0.80, 0.55, 1);
+  return 0.80; // Very large content, use 0.80 scale
 };
 
 const createStyles = (scale) =>
