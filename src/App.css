@@ -583,7 +583,8 @@
   font-size: 1.05em;
   color: #1d4ed8;
   font-weight: 500;
-  margin-top: 2px;
+  margin-top: 8px;
+  margin-bottom: 5px;
 }
 
 .resume-contact {
@@ -608,7 +609,7 @@
 }
 
 .resume-section {
-  margin-bottom: 9px;
+  margin-bottom: 11px;
 }
 
 .resume-section-title {
@@ -619,7 +620,7 @@
   color: #1d4ed8;
   border-bottom: 1px solid #bfdbfe;
   padding-bottom: 2px;
-  margin-bottom: 7px;
+  margin-bottom: 8px;
   /* Keep title glued to the first entry */
   break-after: avoid;
   page-break-after: avoid;

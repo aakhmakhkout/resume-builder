@@ -31,13 +31,14 @@ const estimateResumeLines = (resume) => {
   const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
   let lines = 0;
 
-  if (personalInfo.fullName) lines += 2;
-  if (personalInfo.jobTitle) lines += 1;
+  // Header with improved spacing
+  if (personalInfo.fullName) lines += 2.5; // Name with extra spacing below
+  if (personalInfo.jobTitle) lines += 1.5; // Job title with extra spacing below
   if (personalInfo.email || personalInfo.phone || personalInfo.location || personalInfo.linkedin || personalInfo.github) lines += 2;
   lines += estimateWrappedLines(personalInfo.summary, 95);
 
   if (workExperience.length) {
-    lines += 2;
+    lines += 2; // Section title with extra space
     workExperience.forEach((exp) => {
       lines += 2;
       if (exp.location) lines += 1;
@@ -46,7 +47,7 @@ const estimateResumeLines = (resume) => {
   }
 
   if (education.length) {
-    lines += 2;
+    lines += 2; // Section title with extra space
     education.forEach((edu) => {
       lines += 2;
       if (edu.gpa) lines += 1;
@@ -56,7 +57,7 @@ const estimateResumeLines = (resume) => {
   if (skills.length) lines += 2 + estimateWrappedLines(skills.join(' • '), 95);
 
   if (projects.length) {
-    lines += 2;
+    lines += 2; // Section title with extra space
     projects.forEach((proj) => {
       lines += 2;
       if (proj.technologies) lines += estimateWrappedLines(`Technologies: ${proj.technologies}`, 95);
@@ -73,17 +74,18 @@ const estimateResumeLines = (resume) => {
 const getPdfScale = (resume, { singlePage }) => {
   if (singlePage) {
     const estimatedLines = estimateResumeLines(resume);
-    const targetLines = 78;
+    const targetLines = 80; // Slightly increased to account for better spacing
     if (!estimatedLines || estimatedLines <= targetLines) return 1;
-    return clamp((targetLines / estimatedLines) * 0.98, 0.58, 1);
+    return clamp((targetLines / estimatedLines) * 0.98, 0.55, 1);
   }
-  // For multi-page, use slightly larger scale for better readability
-  // but still reduce if content is very large
+  // For multi-page, use appropriate scale for better readability
+  // Reduce scale based on content volume to maintain consistent spacing
   const estimatedLines = estimateResumeLines(resume);
-  if (estimatedLines <= 78) return 1;
-  if (estimatedLines <= 150) return 0.95;
-  if (estimatedLines <= 250) return 0.90;
-  return clamp(0.85, 0.58, 1);
+  if (estimatedLines <= 80) return 1;
+  if (estimatedLines <= 160) return 0.95;
+  if (estimatedLines <= 240) return 0.90;
+  if (estimatedLines <= 320) return 0.85;
+  return clamp(0.80, 0.55, 1);
 };
 
 const createStyles = (scale) =>
