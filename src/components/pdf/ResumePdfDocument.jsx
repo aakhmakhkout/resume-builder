@@ -91,6 +91,9 @@ const createStyles = (scale) =>
     },
     header: {
       textAlign: 'center',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
       borderBottomWidth: 1.2,
       borderBottomColor: '#1d4ed8',
       paddingBottom: 8 * scale,
@@ -99,12 +102,14 @@ const createStyles = (scale) =>
     name: {
       fontSize: 20 * scale,
       fontFamily: 'Times-Bold',
-      marginBottom: 1 * scale,
+      lineHeight: 24 * scale,
+      marginBottom: 3 * scale,
     },
     jobTitle: {
       fontSize: 10.5 * scale,
       color: '#1d4ed8',
-      marginBottom: 2 * scale,
+      lineHeight: 13 * scale,
+      marginBottom: 4 * scale,
     },
     contactText: {
       fontSize: 8.2 * scale,
