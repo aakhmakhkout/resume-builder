@@ -4,8 +4,10 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const isNonEmptyLine = (line) => line.trim();
 const normalizeUrl = (value) => {
   if (!value) return '';
-  if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return value;
-  return `https://${value}`;
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
 };
 
 const DEFAULT_SECTION_ORDER = [
@@ -206,16 +208,21 @@ const renderDateRange = (startDate, endDate, current) => {
 };
 
 const ContactText = ({ personalInfo, styles }) => {
+  const emailValue = personalInfo.email?.trim();
+  const phoneValue = personalInfo.phone?.trim();
+  const locationValue = personalInfo.location?.trim();
+  const linkedinValue = personalInfo.linkedin?.trim();
+  const githubValue = personalInfo.github?.trim();
   const items = [
     {
       type: 'link',
-      value: personalInfo.email,
-      href: personalInfo.email ? `mailto:${personalInfo.email}` : '',
+      value: emailValue,
+      href: emailValue ? `mailto:${emailValue}` : '',
     },
-    { type: 'text', value: personalInfo.phone },
-    { type: 'text', value: personalInfo.location },
-    { type: 'link', value: personalInfo.linkedin, href: normalizeUrl(personalInfo.linkedin) },
-    { type: 'link', value: personalInfo.github, href: normalizeUrl(personalInfo.github) },
+    { type: 'text', value: phoneValue },
+    { type: 'text', value: locationValue },
+    { type: 'link', value: linkedinValue, href: normalizeUrl(linkedinValue) },
+    { type: 'link', value: githubValue, href: normalizeUrl(githubValue) },
   ].filter((item) => item.value);
 
   if (!items.length) return null;
@@ -227,7 +234,7 @@ const ContactText = ({ personalInfo, styles }) => {
         <Text key={`sep-${index}`} style={styles.contactSeparator}> | </Text>,
       );
     }
-    if (item.type === 'link') {
+    if (item.type === 'link' && item.href) {
       renderedItems.push(
         <Link key={`link-${index}`} src={item.href} style={[styles.contactText, styles.contactLink]}>
           {item.value}
@@ -331,10 +338,11 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
             const descriptionLines = proj.description
               ? proj.description.split('\n').filter(isNonEmptyLine)
               : [];
+            const projectLink = proj.link?.trim();
             return (
               <View style={styles.entry} key={`proj-${index}`}>
                 {proj.name ? <Text style={styles.entryTitle}>{proj.name}</Text> : null}
-                {proj.link ? <Link src={proj.link} style={styles.projectLink}>{proj.link}</Link> : null}
+                {projectLink ? <Link src={projectLink} style={styles.projectLink}>{projectLink}</Link> : null}
                 {proj.technologies ? <Text style={styles.subText}>Technologies: {proj.technologies}</Text> : null}
                 {descriptionLines.length > 0 ? (
                   <View style={styles.bulletList}>

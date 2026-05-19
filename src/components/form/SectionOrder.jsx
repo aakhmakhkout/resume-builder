@@ -62,7 +62,14 @@ export default function SectionOrder() {
             onDrop={(event) => handleDrop(event, index)}
             onDragEnd={handleDragEnd}
           >
-            <span className="section-order-handle" title="Drag to reorder">⠿</span>
+            <span
+              className="section-order-handle"
+              title="Drag to reorder"
+              role="img"
+              aria-label="Drag handle"
+            >
+              ⠿
+            </span>
             <span>{SECTION_LABELS[sectionKey] || sectionKey}</span>
           </div>
         ))}
