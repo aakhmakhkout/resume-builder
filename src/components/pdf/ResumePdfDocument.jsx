@@ -196,6 +196,7 @@ const createStyles = (scale) =>
       flexDirection: 'row',
       alignItems: 'flex-start',
       marginBottom: 1 * scale,
+      break: 'avoid',
     },
     bulletSymbol: {
       fontSize: 9 * scale,

@@ -715,6 +715,8 @@
 
 .resume-proj-desc-list li {
   margin-bottom: 2px;
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 .resume-skills-plain {
