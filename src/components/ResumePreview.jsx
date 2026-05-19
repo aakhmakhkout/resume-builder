@@ -1,14 +1,33 @@
 import { useResume } from '../context/ResumeContext';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, Fragment } from 'react';
 
 // Keep preview URLs alive longer so users can read/open the new tab reliably.
 const PREVIEW_URL_REVOKE_DELAY_MS = 60_000;
 // Download URLs can be revoked quickly after the browser starts the file save.
 const DOWNLOAD_URL_REVOKE_DELAY_MS = 5000;
+const DEFAULT_SECTION_ORDER = [
+  'summary',
+  'workExperience',
+  'education',
+  'skills',
+  'projects',
+  'certifications',
+  'languages',
+];
 
 export default function ResumePreview() {
   const { resume } = useResume();
-  const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
+  const {
+    personalInfo,
+    workExperience,
+    education,
+    skills,
+    projects,
+    certifications,
+    languages,
+    sectionOrder: storedSectionOrder,
+  } = resume;
+  const sectionOrder = Array.isArray(storedSectionOrder) ? storedSectionOrder : DEFAULT_SECTION_ORDER;
   const [dlMenuOpen, setDlMenuOpen] = useState(false);
   const dlMenuRef = useRef(null);
 
@@ -75,6 +94,138 @@ export default function ResumePreview() {
 
   const hasContent = personalInfo.fullName || personalInfo.email;
 
+  const sectionRenderers = {
+    summary: () => (
+      personalInfo.summary ? (
+        <section className="resume-section">
+          <h3 className="resume-section-title">Professional Summary</h3>
+          <p className="resume-summary">{personalInfo.summary}</p>
+        </section>
+      ) : null
+    ),
+    workExperience: () => (
+      workExperience.length > 0 ? (
+        <section className="resume-section">
+          <h3 className="resume-section-title">Work Experience</h3>
+          {workExperience.map((exp, i) => (
+            <div className="resume-entry" key={i}>
+              <div className="resume-entry-header">
+                <div>
+                  <span className="resume-entry-title">{exp.jobTitle}</span>
+                  {exp.company && <span className="resume-entry-subtitle"> — {exp.company}</span>}
+                </div>
+                <span className="resume-entry-date">
+                  {exp.startDate}{exp.startDate && (exp.endDate || exp.current) ? ' – ' : ''}{exp.current ? 'Present' : exp.endDate}
+                </span>
+              </div>
+              {exp.location && <p className="resume-entry-location">{exp.location}</p>}
+              {exp.description && (
+                <div className="resume-entry-desc">
+                  {exp.description.split('\n').map((line, j) => (
+                    <p key={j}>{line}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </section>
+      ) : null
+    ),
+    education: () => (
+      education.length > 0 ? (
+        <section className="resume-section">
+          <h3 className="resume-section-title">Education</h3>
+          {education.map((edu, i) => (
+            <div className="resume-entry" key={i}>
+              <div className="resume-entry-header">
+                <div>
+                  <span className="resume-entry-title">{edu.degree}{edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ''}</span>
+                  {edu.institution && <span className="resume-entry-subtitle"> — {edu.institution}</span>}
+                </div>
+                <span className="resume-entry-date">
+                  {edu.startDate}{edu.startDate && edu.endDate ? ' – ' : ''}{edu.endDate}
+                </span>
+              </div>
+              {edu.gpa && <p className="resume-entry-location">GPA: {edu.gpa}</p>}
+            </div>
+          ))}
+        </section>
+      ) : null
+    ),
+    skills: () => (
+      skills.length > 0 ? (
+        <section className="resume-section">
+          <h3 className="resume-section-title">Skills</h3>
+          <p className="resume-skills-plain">{skills.join(' • ')}</p>
+        </section>
+      ) : null
+    ),
+    projects: () => (
+      projects.length > 0 ? (
+        <section className="resume-section">
+          <h3 className="resume-section-title">Projects</h3>
+          {projects.map((proj, i) => {
+            const descriptionLines = proj.description
+              ? proj.description.split('\n').map(line => line.trim()).filter(Boolean)
+              : [];
+            return (
+              <div className="resume-entry" key={i}>
+                <div className="resume-entry-header">
+                  <div className="resume-proj-name-row">
+                    <span className="resume-entry-title">{proj.name}</span>
+                    {proj.link && (
+                      <a href={proj.link} className="resume-entry-link" target="_blank" rel="noreferrer">
+                        {proj.link}
+                      </a>
+                    )}
+                  </div>
+                </div>
+                {proj.technologies && <p className="resume-entry-location"><em>Technologies: {proj.technologies}</em></p>}
+                {descriptionLines.length > 0 && (
+                  <ul className="resume-proj-desc-list">
+                    {descriptionLines.map((line, j) => (
+                      <li key={j}>{line}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </section>
+      ) : null
+    ),
+    certifications: () => (
+      certifications.length > 0 ? (
+        <section className="resume-section">
+          <h3 className="resume-section-title">Certifications</h3>
+          {certifications.map((cert, i) => (
+            <div className="resume-entry" key={i}>
+              <div className="resume-entry-header">
+                <span className="resume-entry-title">{cert.name}</span>
+                <span className="resume-entry-date">{cert.date}</span>
+              </div>
+              {cert.organization && <p className="resume-entry-location">{cert.organization}</p>}
+            </div>
+          ))}
+        </section>
+      ) : null
+    ),
+    languages: () => (
+      languages.length > 0 ? (
+        <section className="resume-section">
+          <h3 className="resume-section-title">Languages</h3>
+          <div className="resume-languages">
+            {languages.map((lang, i) => (
+              <span className="resume-language-item" key={i}>
+                {lang.language}{lang.proficiency ? ` (${lang.proficiency})` : ''}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null
+    ),
+  };
+
   return (
     <div className="preview-panel">
       <div className="preview-toolbar">
@@ -128,123 +279,11 @@ export default function ResumePreview() {
             </div>
           </div>
 
-          {/* Summary */}
-          {personalInfo.summary && (
-            <section className="resume-section">
-              <h3 className="resume-section-title">Professional Summary</h3>
-              <p className="resume-summary">{personalInfo.summary}</p>
-            </section>
-          )}
-
-          {/* Work Experience */}
-          {workExperience.length > 0 && (
-            <section className="resume-section">
-              <h3 className="resume-section-title">Work Experience</h3>
-              {workExperience.map((exp, i) => (
-                <div className="resume-entry" key={i}>
-                  <div className="resume-entry-header">
-                    <div>
-                      <span className="resume-entry-title">{exp.jobTitle}</span>
-                      {exp.company && <span className="resume-entry-subtitle"> — {exp.company}</span>}
-                    </div>
-                    <span className="resume-entry-date">
-                      {exp.startDate}{exp.startDate && (exp.endDate || exp.current) ? ' – ' : ''}{exp.current ? 'Present' : exp.endDate}
-                    </span>
-                  </div>
-                  {exp.location && <p className="resume-entry-location">{exp.location}</p>}
-                  {exp.description && (
-                    <div className="resume-entry-desc">
-                      {exp.description.split('\n').map((line, j) => (
-                        <p key={j}>{line}</p>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </section>
-          )}
-
-          {/* Education */}
-          {education.length > 0 && (
-            <section className="resume-section">
-              <h3 className="resume-section-title">Education</h3>
-              {education.map((edu, i) => (
-                <div className="resume-entry" key={i}>
-                  <div className="resume-entry-header">
-                    <div>
-                      <span className="resume-entry-title">{edu.degree}{edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ''}</span>
-                      {edu.institution && <span className="resume-entry-subtitle"> — {edu.institution}</span>}
-                    </div>
-                    <span className="resume-entry-date">
-                      {edu.startDate}{edu.startDate && edu.endDate ? ' – ' : ''}{edu.endDate}
-                    </span>
-                  </div>
-                  {edu.gpa && <p className="resume-entry-location">GPA: {edu.gpa}</p>}
-                </div>
-              ))}
-            </section>
-          )}
-
-          {/* Skills */}
-          {skills.length > 0 && (
-            <section className="resume-section">
-              <h3 className="resume-section-title">Skills</h3>
-              <p className="resume-skills-plain">{skills.join(' • ')}</p>
-            </section>
-          )}
-
-          {/* Projects */}
-          {projects.length > 0 && (
-            <section className="resume-section">
-              <h3 className="resume-section-title">Projects</h3>
-              {projects.map((proj, i) => (
-                <div className="resume-entry" key={i}>
-                  <div className="resume-entry-header">
-                    <div className="resume-proj-name-row">
-                      <span className="resume-entry-title">{proj.name}</span>
-                      {proj.link && (
-                        <a href={proj.link} className="resume-entry-link" target="_blank" rel="noreferrer">
-                          {proj.link}
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                  {proj.technologies && <p className="resume-entry-location"><em>Technologies: {proj.technologies}</em></p>}
-                  {proj.description && <p className="resume-proj-desc">{proj.description}</p>}
-                </div>
-              ))}
-            </section>
-          )}
-
-          {/* Certifications */}
-          {certifications.length > 0 && (
-            <section className="resume-section">
-              <h3 className="resume-section-title">Certifications</h3>
-              {certifications.map((cert, i) => (
-                <div className="resume-entry" key={i}>
-                  <div className="resume-entry-header">
-                    <span className="resume-entry-title">{cert.name}</span>
-                    <span className="resume-entry-date">{cert.date}</span>
-                  </div>
-                  {cert.organization && <p className="resume-entry-location">{cert.organization}</p>}
-                </div>
-              ))}
-            </section>
-          )}
-
-          {/* Languages */}
-          {languages.length > 0 && (
-            <section className="resume-section">
-              <h3 className="resume-section-title">Languages</h3>
-              <div className="resume-languages">
-                {languages.map((lang, i) => (
-                  <span className="resume-language-item" key={i}>
-                    {lang.language}{lang.proficiency ? ` (${lang.proficiency})` : ''}
-                  </span>
-                ))}
-              </div>
-            </section>
-          )}
+          {sectionOrder.map((sectionKey) => (
+            <Fragment key={sectionKey}>
+              {sectionRenderers[sectionKey]?.()}
+            </Fragment>
+          ))}
 
           {!hasContent && (
             <div className="resume-empty-state">

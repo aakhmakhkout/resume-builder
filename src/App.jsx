@@ -1,5 +1,6 @@
 import { ResumeProvider } from './context/ResumeContext';
 import PersonalInfo from './components/form/PersonalInfo';
+import SectionOrder from './components/form/SectionOrder';
 import WorkExperience from './components/form/WorkExperience';
 import Education from './components/form/Education';
 import Skills from './components/form/Skills';
@@ -21,6 +22,7 @@ function App() {
             </div>
             <div className="form-panel-content">
               <PersonalInfo />
+              <SectionOrder />
               <WorkExperience />
               <Education />
               <Skills />
