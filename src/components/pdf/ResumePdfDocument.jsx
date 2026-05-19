@@ -4,7 +4,7 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const isNonEmptyLine = (line) => line.trim();
 const normalizeUrl = (value) => {
   if (!value) return '';
-  if (/^https?:\/\//i.test(value)) return value;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return value;
   return `https://${value}`;
 };
 
@@ -229,7 +229,7 @@ const ContactText = ({ personalInfo, styles }) => {
     }
     if (item.type === 'link') {
       renderedItems.push(
-        <Link key={`link-${index}`} href={item.href} style={[styles.contactText, styles.contactLink]}>
+        <Link key={`link-${index}`} src={item.href} style={[styles.contactText, styles.contactLink]}>
           {item.value}
         </Link>,
       );
@@ -334,7 +334,7 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
             return (
               <View style={styles.entry} key={`proj-${index}`}>
                 {proj.name ? <Text style={styles.entryTitle}>{proj.name}</Text> : null}
-                {proj.link ? <Link href={proj.link} style={styles.projectLink}>{proj.link}</Link> : null}
+                {proj.link ? <Link src={proj.link} style={styles.projectLink}>{proj.link}</Link> : null}
                 {proj.technologies ? <Text style={styles.subText}>Technologies: {proj.technologies}</Text> : null}
                 {descriptionLines.length > 0 ? (
                   <View style={styles.bulletList}>
