@@ -71,11 +71,19 @@ const estimateResumeLines = (resume) => {
 };
 
 const getPdfScale = (resume, { singlePage }) => {
-  if (!singlePage) return 1.08;
+  if (singlePage) {
+    const estimatedLines = estimateResumeLines(resume);
+    const targetLines = 78;
+    if (!estimatedLines || estimatedLines <= targetLines) return 1;
+    return clamp((targetLines / estimatedLines) * 0.98, 0.58, 1);
+  }
+  // For multi-page, use slightly larger scale for better readability
+  // but still reduce if content is very large
   const estimatedLines = estimateResumeLines(resume);
-  const targetLines = 78;
-  if (!estimatedLines || estimatedLines <= targetLines) return 1;
-  return clamp((targetLines / estimatedLines) * 0.98, 0.58, 1);
+  if (estimatedLines <= 78) return 1;
+  if (estimatedLines <= 150) return 0.95;
+  if (estimatedLines <= 250) return 0.90;
+  return clamp(0.85, 0.58, 1);
 };
 
 const createStyles = (scale) =>
@@ -99,12 +107,12 @@ const createStyles = (scale) =>
     name: {
       fontSize: 20 * scale,
       fontFamily: 'Times-Bold',
-      marginBottom: 2 * scale,
+      marginBottom: 6 * scale,
     },
     jobTitle: {
       fontSize: 10.5 * scale,
       color: '#1d4ed8',
-      marginBottom: 2 * scale,
+      marginBottom: 4 * scale,
     },
     contactText: {
       fontSize: 8.2 * scale,
@@ -119,7 +127,7 @@ const createStyles = (scale) =>
       textDecoration: 'none',
     },
     section: {
-      marginBottom: 8 * scale,
+      marginBottom: 10 * scale,
     },
     sectionTitle: {
       fontSize: 8.8 * scale,
@@ -129,11 +137,11 @@ const createStyles = (scale) =>
       borderBottomWidth: 0.7,
       borderBottomColor: '#bfdbfe',
       paddingBottom: 2 * scale,
-      marginBottom: 5 * scale,
+      marginBottom: 6 * scale,
       letterSpacing: 0.7 * scale,
     },
     entry: {
-      marginBottom: 6 * scale,
+      marginBottom: 7 * scale,
     },
     entryHeader: {
       display: 'flex',

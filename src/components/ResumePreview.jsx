@@ -256,6 +256,9 @@ export default function ResumePreview() {
           </div>
         </div>
       </div>
+      <div className="preview-note">
+        <small><em>Note: For large content, single-page mode may reduce font size to fit everything on one page. Use multi-page mode for better readability if content is extensive.</em></small>
+      </div>
       <div className="resume-paper-wrapper">
         <div className="resume-paper">
           {/* Header */}
