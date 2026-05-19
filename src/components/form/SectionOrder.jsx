@@ -68,7 +68,7 @@ export default function SectionOrder() {
               role="img"
               aria-label="Drag handle"
             >
-              ⠿
+              ⋮⋮
             </span>
             <span>{SECTION_LABELS[sectionKey] || sectionKey}</span>
           </div>

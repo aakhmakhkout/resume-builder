@@ -167,6 +167,12 @@ const createStyles = (scale) =>
       color: '#6b7280',
       marginTop: 1 * scale,
     },
+    projectTechText: {
+      fontSize: 8.2 * scale,
+      color: '#6b7280',
+      marginTop: 1 * scale,
+      fontStyle: 'italic',
+    },
     bodyText: {
       fontSize: 9 * scale,
       color: '#374151',
@@ -343,7 +349,7 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
               <View style={styles.entry} key={`proj-${index}`}>
                 {proj.name ? <Text style={styles.entryTitle}>{proj.name}</Text> : null}
                 {projectLink ? <Link src={projectLink} style={styles.projectLink}>{projectLink}</Link> : null}
-                {proj.technologies ? <Text style={styles.subText}>Technologies: {proj.technologies}</Text> : null}
+                {proj.technologies ? <Text style={styles.projectTechText}>Technologies: {proj.technologies}</Text> : null}
                 {descriptionLines.length > 0 ? (
                   <View style={styles.bulletList}>
                     {descriptionLines.map((line, lineIndex) => (
