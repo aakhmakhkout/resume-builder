@@ -207,7 +207,11 @@ const renderDateRange = (startDate, endDate, current) => {
 
 const ContactText = ({ personalInfo, styles }) => {
   const items = [
-    { type: 'text', value: personalInfo.email },
+    {
+      type: 'link',
+      value: personalInfo.email,
+      href: personalInfo.email ? `mailto:${personalInfo.email}` : '',
+    },
     { type: 'text', value: personalInfo.phone },
     { type: 'text', value: personalInfo.location },
     { type: 'link', value: personalInfo.linkedin, href: normalizeUrl(personalInfo.linkedin) },
@@ -225,7 +229,7 @@ const ContactText = ({ personalInfo, styles }) => {
     }
     if (item.type === 'link') {
       renderedItems.push(
-        <Link key={`link-${index}`} src={item.href} style={[styles.contactText, styles.contactLink]}>
+        <Link key={`link-${index}`} href={item.href} style={[styles.contactText, styles.contactLink]}>
           {item.value}
         </Link>,
       );
@@ -330,7 +334,7 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
             return (
               <View style={styles.entry} key={`proj-${index}`}>
                 {proj.name ? <Text style={styles.entryTitle}>{proj.name}</Text> : null}
-                {proj.link ? <Link src={proj.link} style={styles.projectLink}>{proj.link}</Link> : null}
+                {proj.link ? <Link href={proj.link} style={styles.projectLink}>{proj.link}</Link> : null}
                 {proj.technologies ? <Text style={styles.subText}>Technologies: {proj.technologies}</Text> : null}
                 {descriptionLines.length > 0 ? (
                   <View style={styles.bulletList}>

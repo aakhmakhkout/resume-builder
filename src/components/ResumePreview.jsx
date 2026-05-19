@@ -1,5 +1,5 @@
 import { useResume } from '../context/ResumeContext';
-import { useRef, useState, useEffect, Fragment } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 // Keep preview URLs alive longer so users can read/open the new tab reliably.
 const PREVIEW_URL_REVOKE_DELAY_MS = 60_000;
@@ -95,17 +95,17 @@ export default function ResumePreview() {
   const hasContent = personalInfo.fullName || personalInfo.email;
 
   const sectionRenderers = {
-    summary: () => (
+    summary: (key) => (
       personalInfo.summary ? (
-        <section className="resume-section">
+        <section className="resume-section" key={key}>
           <h3 className="resume-section-title">Professional Summary</h3>
           <p className="resume-summary">{personalInfo.summary}</p>
         </section>
       ) : null
     ),
-    workExperience: () => (
+    workExperience: (key) => (
       workExperience.length > 0 ? (
-        <section className="resume-section">
+        <section className="resume-section" key={key}>
           <h3 className="resume-section-title">Work Experience</h3>
           {workExperience.map((exp, i) => (
             <div className="resume-entry" key={i}>
@@ -131,9 +131,9 @@ export default function ResumePreview() {
         </section>
       ) : null
     ),
-    education: () => (
+    education: (key) => (
       education.length > 0 ? (
-        <section className="resume-section">
+        <section className="resume-section" key={key}>
           <h3 className="resume-section-title">Education</h3>
           {education.map((edu, i) => (
             <div className="resume-entry" key={i}>
@@ -152,17 +152,17 @@ export default function ResumePreview() {
         </section>
       ) : null
     ),
-    skills: () => (
+    skills: (key) => (
       skills.length > 0 ? (
-        <section className="resume-section">
+        <section className="resume-section" key={key}>
           <h3 className="resume-section-title">Skills</h3>
           <p className="resume-skills-plain">{skills.join(' • ')}</p>
         </section>
       ) : null
     ),
-    projects: () => (
+    projects: (key) => (
       projects.length > 0 ? (
-        <section className="resume-section">
+        <section className="resume-section" key={key}>
           <h3 className="resume-section-title">Projects</h3>
           {projects.map((proj, i) => {
             const descriptionLines = proj.description
@@ -194,9 +194,9 @@ export default function ResumePreview() {
         </section>
       ) : null
     ),
-    certifications: () => (
+    certifications: (key) => (
       certifications.length > 0 ? (
-        <section className="resume-section">
+        <section className="resume-section" key={key}>
           <h3 className="resume-section-title">Certifications</h3>
           {certifications.map((cert, i) => (
             <div className="resume-entry" key={i}>
@@ -210,9 +210,9 @@ export default function ResumePreview() {
         </section>
       ) : null
     ),
-    languages: () => (
+    languages: (key) => (
       languages.length > 0 ? (
-        <section className="resume-section">
+        <section className="resume-section" key={key}>
           <h3 className="resume-section-title">Languages</h3>
           <div className="resume-languages">
             {languages.map((lang, i) => (
@@ -279,11 +279,7 @@ export default function ResumePreview() {
             </div>
           </div>
 
-          {sectionOrder.map((sectionKey) => (
-            <Fragment key={sectionKey}>
-              {sectionRenderers[sectionKey]?.()}
-            </Fragment>
-          ))}
+          {sectionOrder.map((sectionKey) => sectionRenderers[sectionKey]?.(sectionKey))}
 
           {!hasContent && (
             <div className="resume-empty-state">
