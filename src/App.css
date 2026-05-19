@@ -91,6 +91,45 @@
   transition: background 0.15s;
 }
 
+.section-order-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0.2px;
+}
+
+.section-order-list {
+  display: grid;
+  gap: 8px;
+}
+
+.section-order-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--accent);
+  font-size: 0.85rem;
+  cursor: grab;
+}
+
+.section-order-item:active {
+  cursor: grabbing;
+}
+
+.section-order-item--drop-target {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(91, 126, 201, 0.2);
+}
+
+.section-order-handle {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
 .section-header {
   display: flex;
   align-items: center;
@@ -359,6 +398,17 @@
   flex-shrink: 0;
 }
 
+.preview-note {
+  padding: 8px 20px;
+  background: #1a1e26;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.4;
+}
+
 .preview-title {
   font-size: 1rem;
   font-weight: 600;
@@ -533,14 +583,15 @@
   font-size: 1.05em;
   color: #1d4ed8;
   font-weight: 500;
-  margin-top: 2px;
+  margin-top: 8px;
+  margin-bottom: 5px;
 }
 
 .resume-contact {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 4px 12px;
+  gap: 2px 8px;
   margin-top: 5px;
   font-size: 0.82em;
   color: #4b5563;
@@ -548,7 +599,7 @@
 
 .resume-contact span + span::before {
   content: '|';
-  margin: 0 8px;
+  margin: 0 4px;
   color: #9ca3af;
 }
 
@@ -558,7 +609,7 @@
 }
 
 .resume-section {
-  margin-bottom: 9px;
+  margin-bottom: 11px;
 }
 
 .resume-section-title {
@@ -569,7 +620,7 @@
   color: #1d4ed8;
   border-bottom: 1px solid #bfdbfe;
   padding-bottom: 2px;
-  margin-bottom: 7px;
+  margin-bottom: 8px;
   /* Keep title glued to the first entry */
   break-after: avoid;
   page-break-after: avoid;
@@ -652,6 +703,20 @@
   color: #374151;
   margin-top: 3px;
   line-height: 1.5;
+}
+
+.resume-proj-desc-list {
+  margin: 3px 0 0 18px;
+  padding: 0;
+  color: #374151;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.resume-proj-desc-list li {
+  margin-bottom: 2px;
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 .resume-skills-plain {

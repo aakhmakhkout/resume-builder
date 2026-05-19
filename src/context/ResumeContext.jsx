@@ -3,6 +3,23 @@ import { createContext, useContext, useState, useEffect, useRef } from 'react';
 
 const STORAGE_KEY = 'resume_builder_data';
 
+const DEFAULT_SECTION_ORDER = [
+  'summary',
+  'workExperience',
+  'education',
+  'skills',
+  'projects',
+  'certifications',
+  'languages',
+];
+
+const normalizeSectionOrder = (order) => {
+  if (!Array.isArray(order)) return [...DEFAULT_SECTION_ORDER];
+  const filtered = order.filter((section) => DEFAULT_SECTION_ORDER.includes(section));
+  const missing = DEFAULT_SECTION_ORDER.filter((section) => !filtered.includes(section));
+  return [...filtered, ...missing];
+};
+
 const initialState = {
   personalInfo: {
     fullName: '',
@@ -20,12 +37,21 @@ const initialState = {
   projects: [],
   certifications: [],
   languages: [],
+  sectionOrder: [...DEFAULT_SECTION_ORDER],
 };
 
 function loadFromStorage() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        ...initialState,
+        ...parsed,
+        personalInfo: { ...initialState.personalInfo, ...(parsed.personalInfo || {}) },
+        sectionOrder: normalizeSectionOrder(parsed.sectionOrder),
+      };
+    }
   } catch {
     // ignore parse errors
   }
@@ -94,6 +120,10 @@ export function ResumeProvider({ children }) {
     setResume(prev => ({ ...prev, skills: newOrder }));
   };
 
+  const reorderSections = (newOrder) => {
+    setResume(prev => ({ ...prev, sectionOrder: normalizeSectionOrder(newOrder) }));
+  };
+
   return (
     <ResumeContext.Provider value={{
       resume,
@@ -104,6 +134,7 @@ export function ResumeProvider({ children }) {
       addSkill,
       removeSkill,
       reorderSkills,
+      reorderSections,
     }}>
       {children}
     </ResumeContext.Provider>

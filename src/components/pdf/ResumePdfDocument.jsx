@@ -2,6 +2,23 @@ import { Document, Page, Text, View, Link, StyleSheet } from '@react-pdf/rendere
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const isNonEmptyLine = (line) => line.trim();
+const normalizeUrl = (value) => {
+  if (!value) return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+};
+
+const DEFAULT_SECTION_ORDER = [
+  'summary',
+  'workExperience',
+  'education',
+  'skills',
+  'projects',
+  'certifications',
+  'languages',
+];
 
 const estimateWrappedLines = (text, charsPerLine = 85) => {
   if (!text) return 0;
@@ -14,13 +31,14 @@ const estimateResumeLines = (resume) => {
   const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
   let lines = 0;
 
-  if (personalInfo.fullName) lines += 2;
-  if (personalInfo.jobTitle) lines += 1;
+  // Header with improved spacing
+  if (personalInfo.fullName) lines += 2.5; // Name with extra spacing below
+  if (personalInfo.jobTitle) lines += 1.5; // Job title with extra spacing below
   if (personalInfo.email || personalInfo.phone || personalInfo.location || personalInfo.linkedin || personalInfo.github) lines += 2;
   lines += estimateWrappedLines(personalInfo.summary, 95);
 
   if (workExperience.length) {
-    lines += 2;
+    lines += 2; // Section title with extra space
     workExperience.forEach((exp) => {
       lines += 2;
       if (exp.location) lines += 1;
@@ -29,7 +47,7 @@ const estimateResumeLines = (resume) => {
   }
 
   if (education.length) {
-    lines += 2;
+    lines += 2; // Section title with extra space
     education.forEach((edu) => {
       lines += 2;
       if (edu.gpa) lines += 1;
@@ -39,7 +57,7 @@ const estimateResumeLines = (resume) => {
   if (skills.length) lines += 2 + estimateWrappedLines(skills.join(' • '), 95);
 
   if (projects.length) {
-    lines += 2;
+    lines += 2; // Section title with extra space
     projects.forEach((proj) => {
       lines += 2;
       if (proj.technologies) lines += estimateWrappedLines(`Technologies: ${proj.technologies}`, 95);
@@ -54,11 +72,20 @@ const estimateResumeLines = (resume) => {
 };
 
 const getPdfScale = (resume, { singlePage }) => {
-  if (!singlePage) return 1.08;
+  if (singlePage) {
+    const estimatedLines = estimateResumeLines(resume);
+    const targetLines = 80; // Slightly increased to account for better spacing
+    if (!estimatedLines || estimatedLines <= targetLines) return 1;
+    return clamp((targetLines / estimatedLines) * 0.98, 0.55, 1);
+  }
+  // For multi-page, use appropriate scale for better readability
+  // Reduce scale based on content volume to maintain consistent spacing
   const estimatedLines = estimateResumeLines(resume);
-  const targetLines = 78;
-  if (!estimatedLines || estimatedLines <= targetLines) return 1;
-  return clamp((targetLines / estimatedLines) * 0.98, 0.58, 1);
+  if (estimatedLines <= 80) return 1;
+  if (estimatedLines <= 160) return 0.95;
+  if (estimatedLines <= 240) return 0.90;
+  if (estimatedLines <= 320) return 0.85;
+  return 0.80; // Very large content, use 0.80 scale
 };
 
 const createStyles = (scale) =>
@@ -82,20 +109,27 @@ const createStyles = (scale) =>
     name: {
       fontSize: 20 * scale,
       fontFamily: 'Times-Bold',
-      marginBottom: 1 * scale,
+      marginBottom: 6 * scale,
     },
     jobTitle: {
       fontSize: 10.5 * scale,
       color: '#1d4ed8',
-      marginBottom: 2 * scale,
+      marginBottom: 4 * scale,
     },
     contactText: {
       fontSize: 8.2 * scale,
       color: '#4b5563',
       lineHeight: 1.35,
     },
+    contactSeparator: {
+      color: '#9ca3af',
+    },
+    contactLink: {
+      color: '#1d4ed8',
+      textDecoration: 'none',
+    },
     section: {
-      marginBottom: 8 * scale,
+      marginBottom: 10 * scale,
     },
     sectionTitle: {
       fontSize: 8.8 * scale,
@@ -105,11 +139,11 @@ const createStyles = (scale) =>
       borderBottomWidth: 0.7,
       borderBottomColor: '#bfdbfe',
       paddingBottom: 2 * scale,
-      marginBottom: 5 * scale,
+      marginBottom: 6 * scale,
       letterSpacing: 0.7 * scale,
     },
     entry: {
-      marginBottom: 6 * scale,
+      marginBottom: 7 * scale,
     },
     entryHeader: {
       display: 'flex',
@@ -143,10 +177,36 @@ const createStyles = (scale) =>
       color: '#6b7280',
       marginTop: 1 * scale,
     },
+    projectTechText: {
+      fontSize: 8.2 * scale,
+      color: '#6b7280',
+      marginTop: 1 * scale,
+      fontStyle: 'italic',
+    },
     bodyText: {
       fontSize: 9 * scale,
       color: '#374151',
       marginTop: 2 * scale,
+      lineHeight: 1.45,
+    },
+    bulletList: {
+      marginTop: 2 * scale,
+    },
+    bulletRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: 1 * scale,
+      break: 'avoid',
+    },
+    bulletSymbol: {
+      fontSize: 9 * scale,
+      marginRight: 4 * scale,
+      lineHeight: 1.45,
+    },
+    bulletText: {
+      flex: 1,
+      fontSize: 9 * scale,
+      color: '#374151',
       lineHeight: 1.45,
     },
     projectLink: {
@@ -165,22 +225,185 @@ const renderDateRange = (startDate, endDate, current) => {
 };
 
 const ContactText = ({ personalInfo, styles }) => {
+  const emailValue = personalInfo.email?.trim();
+  const phoneValue = personalInfo.phone?.trim();
+  const locationValue = personalInfo.location?.trim();
+  const linkedinValue = personalInfo.linkedin?.trim();
+  const githubValue = personalInfo.github?.trim();
   const items = [
-    personalInfo.email,
-    personalInfo.phone,
-    personalInfo.location,
-    personalInfo.linkedin,
-    personalInfo.github,
-  ].filter(Boolean);
+    {
+      type: 'link',
+      value: emailValue,
+      href: emailValue ? `mailto:${emailValue}` : '',
+    },
+    { type: 'text', value: phoneValue },
+    { type: 'text', value: locationValue },
+    { type: 'link', value: linkedinValue, href: normalizeUrl(linkedinValue) },
+    { type: 'link', value: githubValue, href: normalizeUrl(githubValue) },
+  ].filter((item) => item.value);
 
   if (!items.length) return null;
-  return <Text style={styles.contactText}>Contact: {items.join(' | ')}</Text>;
+
+  const renderedItems = [];
+  items.forEach((item, index) => {
+    if (index > 0) {
+      renderedItems.push(
+        <Text key={`sep-${index}`} style={styles.contactSeparator}> | </Text>,
+      );
+    }
+    if (item.type === 'link' && item.href) {
+      renderedItems.push(
+        <Link key={`link-${index}`} src={item.href} style={[styles.contactText, styles.contactLink]}>
+          {item.value}
+        </Link>,
+      );
+    } else {
+      renderedItems.push(
+        <Text key={`text-${index}`}>{item.value}</Text>,
+      );
+    }
+  });
+
+  return (
+    <Text style={styles.contactText}>
+      Contact: {renderedItems}
+    </Text>
+  );
 };
 
 export default function ResumePdfDocument({ resume, singlePage = true }) {
   const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
   const scale = getPdfScale(resume, { singlePage });
   const styles = createStyles(scale);
+  const sectionOrder = Array.isArray(resume.sectionOrder) ? resume.sectionOrder : DEFAULT_SECTION_ORDER;
+
+  const sectionRenderers = {
+    summary: (key) => (
+      personalInfo.summary ? (
+        <View style={styles.section} key={key}>
+          <Text style={styles.sectionTitle}>Professional Summary</Text>
+          <Text style={styles.bodyText}>{personalInfo.summary}</Text>
+        </View>
+      ) : null
+    ),
+    workExperience: (key) => (
+      workExperience.length > 0 ? (
+        <View style={styles.section} key={key}>
+          <Text style={styles.sectionTitle}>Work Experience</Text>
+          {workExperience.map((exp, index) => (
+            <View style={styles.entry} key={`work-${index}`}>
+              <View style={styles.entryHeader}>
+                <View style={styles.entryHeadingWrap}>
+                  {exp.jobTitle ? <Text style={styles.entryTitle}>{exp.jobTitle}</Text> : null}
+                  {exp.company ? <Text style={styles.entrySubtitle}>— {exp.company}</Text> : null}
+                </View>
+                {renderDateRange(exp.startDate, exp.endDate, exp.current) ? (
+                  <Text style={styles.entryDate}>{renderDateRange(exp.startDate, exp.endDate, exp.current)}</Text>
+                ) : null}
+              </View>
+              {exp.location ? <Text style={styles.subText}>{exp.location}</Text> : null}
+              {exp.description
+                ? exp.description.split('\n').filter(isNonEmptyLine).map((line, lineIndex) => (
+                  <Text key={`work-desc-${index}-${lineIndex}`} style={styles.bodyText}>
+                    {line}
+                  </Text>
+                ))
+                : null}
+            </View>
+          ))}
+        </View>
+      ) : null
+    ),
+    education: (key) => (
+      education.length > 0 ? (
+        <View style={styles.section} key={key}>
+          <Text style={styles.sectionTitle}>Education</Text>
+          {education.map((edu, index) => (
+            <View style={styles.entry} key={`edu-${index}`}>
+              <View style={styles.entryHeader}>
+                <View style={styles.entryHeadingWrap}>
+                  {edu.degree || edu.fieldOfStudy ? (
+                    <Text style={styles.entryTitle}>
+                      {edu.degree || ''}{edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ''}
+                    </Text>
+                  ) : null}
+                  {edu.institution ? <Text style={styles.entrySubtitle}>— {edu.institution}</Text> : null}
+                </View>
+                {renderDateRange(edu.startDate, edu.endDate, false) ? (
+                  <Text style={styles.entryDate}>{renderDateRange(edu.startDate, edu.endDate, false)}</Text>
+                ) : null}
+              </View>
+              {edu.gpa ? <Text style={styles.subText}>GPA: {edu.gpa}</Text> : null}
+            </View>
+          ))}
+        </View>
+      ) : null
+    ),
+    skills: (key) => (
+      skills.length > 0 ? (
+        <View style={styles.section} key={key}>
+          <Text style={styles.sectionTitle}>Skills</Text>
+          <Text style={styles.bodyText}>{skills.join(' • ')}</Text>
+        </View>
+      ) : null
+    ),
+    projects: (key) => (
+      projects.length > 0 ? (
+        <View style={styles.section} key={key}>
+          <Text style={styles.sectionTitle}>Projects</Text>
+          {projects.map((proj, index) => {
+            const descriptionLines = proj.description
+              ? proj.description.split('\n').filter(isNonEmptyLine)
+              : [];
+            const projectLink = proj.link?.trim();
+            return (
+              <View style={styles.entry} key={`proj-${index}`}>
+                {proj.name ? <Text style={styles.entryTitle}>{proj.name}</Text> : null}
+                {projectLink ? <Link src={projectLink} style={styles.projectLink}>{projectLink}</Link> : null}
+                {proj.technologies ? <Text style={styles.projectTechText}>Technologies: {proj.technologies}</Text> : null}
+                {descriptionLines.length > 0 ? (
+                  <View style={styles.bulletList}>
+                    {descriptionLines.map((line, lineIndex) => (
+                      <View style={styles.bulletRow} key={`proj-${index}-line-${lineIndex}`}>
+                        <Text style={styles.bulletSymbol}>•</Text>
+                        <Text style={styles.bulletText}>{line}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            );
+          })}
+        </View>
+      ) : null
+    ),
+    certifications: (key) => (
+      certifications.length > 0 ? (
+        <View style={styles.section} key={key}>
+          <Text style={styles.sectionTitle}>Certifications</Text>
+          {certifications.map((cert, index) => (
+            <View style={styles.entry} key={`cert-${index}`}>
+              <View style={styles.entryHeader}>
+                {cert.name ? <Text style={styles.entryTitle}>{cert.name}</Text> : null}
+                {cert.date ? <Text style={styles.entryDate}>{cert.date}</Text> : null}
+              </View>
+              {cert.organization ? <Text style={styles.subText}>{cert.organization}</Text> : null}
+            </View>
+          ))}
+        </View>
+      ) : null
+    ),
+    languages: (key) => (
+      languages.length > 0 ? (
+        <View style={styles.section} key={key}>
+          <Text style={styles.sectionTitle}>Languages</Text>
+          <Text style={styles.bodyText}>
+            {languages.map((lang) => `${lang.language}${lang.proficiency ? ` (${lang.proficiency})` : ''}`).join(' • ')}
+          </Text>
+        </View>
+      ) : null
+    ),
+  };
 
   return (
     <Document title={`${personalInfo.fullName || 'Resume'} Resume`}>
@@ -191,108 +414,7 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
           <ContactText personalInfo={personalInfo} styles={styles} />
         </View>
 
-        {personalInfo.summary ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Professional Summary</Text>
-            <Text style={styles.bodyText}>{personalInfo.summary}</Text>
-          </View>
-        ) : null}
-
-        {workExperience.length > 0 ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Work Experience</Text>
-            {workExperience.map((exp, index) => (
-              <View style={styles.entry} key={`work-${index}`}>
-                <View style={styles.entryHeader}>
-                  <View style={styles.entryHeadingWrap}>
-                    {exp.jobTitle ? <Text style={styles.entryTitle}>{exp.jobTitle}</Text> : null}
-                    {exp.company ? <Text style={styles.entrySubtitle}>— {exp.company}</Text> : null}
-                  </View>
-                  {renderDateRange(exp.startDate, exp.endDate, exp.current) ? (
-                    <Text style={styles.entryDate}>{renderDateRange(exp.startDate, exp.endDate, exp.current)}</Text>
-                  ) : null}
-                </View>
-                {exp.location ? <Text style={styles.subText}>{exp.location}</Text> : null}
-                {exp.description
-                  ? exp.description.split('\n').filter(isNonEmptyLine).map((line, lineIndex) => (
-                    <Text key={`work-desc-${index}-${lineIndex}`} style={styles.bodyText}>
-                      {line}
-                    </Text>
-                  ))
-                  : null}
-              </View>
-            ))}
-          </View>
-        ) : null}
-
-        {education.length > 0 ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Education</Text>
-            {education.map((edu, index) => (
-              <View style={styles.entry} key={`edu-${index}`}>
-                <View style={styles.entryHeader}>
-                  <View style={styles.entryHeadingWrap}>
-                    {edu.degree || edu.fieldOfStudy ? (
-                      <Text style={styles.entryTitle}>
-                        {edu.degree || ''}{edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ''}
-                      </Text>
-                    ) : null}
-                    {edu.institution ? <Text style={styles.entrySubtitle}>— {edu.institution}</Text> : null}
-                  </View>
-                  {renderDateRange(edu.startDate, edu.endDate, false) ? (
-                    <Text style={styles.entryDate}>{renderDateRange(edu.startDate, edu.endDate, false)}</Text>
-                  ) : null}
-                </View>
-                {edu.gpa ? <Text style={styles.subText}>GPA: {edu.gpa}</Text> : null}
-              </View>
-            ))}
-          </View>
-        ) : null}
-
-        {skills.length > 0 ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Skills</Text>
-            <Text style={styles.bodyText}>{skills.join(' • ')}</Text>
-          </View>
-        ) : null}
-
-        {projects.length > 0 ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Projects</Text>
-            {projects.map((proj, index) => (
-              <View style={styles.entry} key={`proj-${index}`}>
-                {proj.name ? <Text style={styles.entryTitle}>{proj.name}</Text> : null}
-                {proj.link ? <Link src={proj.link} style={styles.projectLink}>{proj.link}</Link> : null}
-                {proj.technologies ? <Text style={styles.subText}>Technologies: {proj.technologies}</Text> : null}
-                {proj.description ? <Text style={styles.bodyText}>{proj.description}</Text> : null}
-              </View>
-            ))}
-          </View>
-        ) : null}
-
-        {certifications.length > 0 ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Certifications</Text>
-            {certifications.map((cert, index) => (
-              <View style={styles.entry} key={`cert-${index}`}>
-                <View style={styles.entryHeader}>
-                  {cert.name ? <Text style={styles.entryTitle}>{cert.name}</Text> : null}
-                  {cert.date ? <Text style={styles.entryDate}>{cert.date}</Text> : null}
-                </View>
-                {cert.organization ? <Text style={styles.subText}>{cert.organization}</Text> : null}
-              </View>
-            ))}
-          </View>
-        ) : null}
-
-        {languages.length > 0 ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Languages</Text>
-            <Text style={styles.bodyText}>
-              {languages.map((lang) => `${lang.language}${lang.proficiency ? ` (${lang.proficiency})` : ''}`).join(' • ')}
-            </Text>
-          </View>
-        ) : null}
+        {sectionOrder.map((sectionKey) => sectionRenderers[sectionKey]?.(sectionKey))}
       </Page>
     </Document>
   );
