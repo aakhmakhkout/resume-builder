@@ -55,12 +55,14 @@ function loadFromStorage() {
       // Migration: convert old flat skills array to skillGroups
       let skillGroups = parsed.skillGroups;
       if (!skillGroups && parsed.skills && Array.isArray(parsed.skills)) {
+        // Validate that skills are strings before migration
+        const validSkills = parsed.skills.filter(skill => typeof skill === 'string' && skill.trim());
         // If old flat skills format exists, migrate to skillGroups
         skillGroups = [
           { category: 'Frontend', skills: [] },
           { category: 'Backend', skills: [] },
           { category: 'Tools and Deployment', skills: [] },
-          { category: 'Other', skills: parsed.skills },
+          { category: 'Other', skills: validSkills },
         ];
       }
       

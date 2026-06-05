@@ -449,11 +449,6 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
           sectionGroups.push(currentGroup);
         }
 
-        // If no page breaks, wrap everything in one group
-        if (sectionGroups.length === 0) {
-          sectionGroups.push(sectionOrder.map((sectionKey) => sectionRenderers[sectionKey]?.(sectionKey)).filter(Boolean));
-        }
-
         // Render each group on a separate page
         return sectionGroups.map((group, pageIndex) => (
           <Page size="A4" style={styles.page} key={`page-${pageIndex}`}>

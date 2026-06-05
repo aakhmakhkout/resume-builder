@@ -179,7 +179,7 @@ export default function Skills() {
             )}
             <div className="skills-tags">
               {group.skills.map((skill, skillIndex) => {
-                const isDropTarget = dragOverSkillIdx.groupIndex === groupIndex && dragOverSkillIdx.skillIndex === skillIndex && draggingSkillIdx.skillIndex !== skillIndex;
+                const isDropTarget = dragOverSkillIdx.groupIndex === groupIndex && dragOverSkillIdx.skillIndex === skillIndex && draggingSkillIdx.groupIndex === groupIndex && draggingSkillIdx.skillIndex !== skillIndex;
                 const classNameStr = `skill-tag${isDropTarget ? ' skill-tag--drop-target' : ''}`;
                 return (
                   <span
