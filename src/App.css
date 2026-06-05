@@ -437,6 +437,32 @@
   box-shadow: 0 0 0 3px rgba(91, 126, 201, 0.15);
 }
 
+.skill-input-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.skill-input-row input {
+  flex: 1;
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: var(--accent);
+  background: var(--surface-1);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.skill-input-row input::placeholder { color: #4e5567; }
+
+.skill-input-row input:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(91, 126, 201, 0.15);
+}
+
 .btn-remove-group {
   background: none;
   border: none;
