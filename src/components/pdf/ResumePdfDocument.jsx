@@ -223,6 +223,15 @@ const createStyles = (scale) =>
       textDecoration: 'none',
       marginTop: 1 * scale,
     },
+    skillGroupContent: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginBottom: 4 * scale,
+    },
+    skillCategory: {
+      fontFamily: 'Times-Bold',
+      marginRight: 4 * scale,
+    },
   });
 
 const renderDateRange = (startDate, endDate, current) => {
@@ -354,9 +363,9 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
           <Text style={styles.sectionTitle}>Skills</Text>
           {skillGroups.map((group, groupIndex) => 
             group.skills && group.skills.length > 0 ? (
-              <View key={`skill-group-${groupIndex}`} style={{ marginBottom: 4 * scale, flexDirection: 'row', flexWrap: 'wrap' }}>
+              <View key={`skill-group-${groupIndex}`} style={styles.skillGroupContent}>
                 {group.category ? (
-                  <Text style={{ ...styles.bodyText, fontFamily: 'Times-Bold', marginRight: 4 * scale }}>
+                  <Text style={{ ...styles.bodyText, ...styles.skillCategory }}>
                     {group.category}:
                   </Text>
                 ) : null}
