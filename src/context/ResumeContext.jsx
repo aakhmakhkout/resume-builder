@@ -36,7 +36,7 @@ const initialState = {
   skillGroups: [
     { category: 'Frontend', skills: [] },
     { category: 'Backend', skills: [] },
-    { category: 'Tools &amp; Deployment', skills: [] },
+    { category: 'Tools & Deployment', skills: [] },
     { category: 'Other', skills: [] },
   ],
   projects: [],
@@ -59,7 +59,7 @@ function loadFromStorage() {
         skillGroups = [
           { category: 'Frontend', skills: [] },
           { category: 'Backend', skills: [] },
-          { category: 'Tools &amp; Deployment', skills: [] },
+          { category: 'Tools & Deployment', skills: [] },
           { category: 'Other', skills: parsed.skills },
         ];
       }

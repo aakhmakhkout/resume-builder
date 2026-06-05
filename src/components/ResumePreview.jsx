@@ -97,17 +97,17 @@ export default function ResumePreview() {
   const hasContent = personalInfo.fullName || personalInfo.email;
 
   const sectionRenderers = {
-    summary: (key) => (
+    summary: (key, sectionIndex) => (
       personalInfo.summary ? (
-        <section className="resume-section" key={key} style={pageBreaks.includes(sectionOrder.indexOf('summary')) ? { pageBreakAfter: 'always' } : {}}>
+        <section className="resume-section" key={key} style={pageBreaks.includes(sectionIndex) ? { pageBreakAfter: 'always' } : {}}>
           <h3 className="resume-section-title">Professional Summary</h3>
           <p className="resume-summary">{personalInfo.summary}</p>
         </section>
       ) : null
     ),
-    workExperience: (key) => (
+    workExperience: (key, sectionIndex) => (
       workExperience.length > 0 ? (
-        <section className="resume-section" key={key} style={pageBreaks.includes(sectionOrder.indexOf('workExperience')) ? { pageBreakAfter: 'always' } : {}}>
+        <section className="resume-section" key={key} style={pageBreaks.includes(sectionIndex) ? { pageBreakAfter: 'always' } : {}}>
           <h3 className="resume-section-title">Work Experience</h3>
           {workExperience.map((exp, i) => (
             <div className="resume-entry" key={i}>
@@ -133,9 +133,9 @@ export default function ResumePreview() {
         </section>
       ) : null
     ),
-    education: (key) => (
+    education: (key, sectionIndex) => (
       education.length > 0 ? (
-        <section className="resume-section" key={key} style={pageBreaks.includes(sectionOrder.indexOf('education')) ? { pageBreakAfter: 'always' } : {}}>
+        <section className="resume-section" key={key} style={pageBreaks.includes(sectionIndex) ? { pageBreakAfter: 'always' } : {}}>
           <h3 className="resume-section-title">Education</h3>
           {education.map((edu, i) => (
             <div className="resume-entry" key={i}>
@@ -154,9 +154,9 @@ export default function ResumePreview() {
         </section>
       ) : null
     ),
-    skills: (key) => (
+    skills: (key, sectionIndex) => (
       skillGroups && skillGroups.length > 0 && skillGroups.some(g => g.skills && g.skills.length > 0) ? (
-        <section className="resume-section" key={key} style={pageBreaks.includes(sectionOrder.indexOf('skills')) ? { pageBreakAfter: 'always' } : {}}>
+        <section className="resume-section" key={key} style={pageBreaks.includes(sectionIndex) ? { pageBreakAfter: 'always' } : {}}>
           <h3 className="resume-section-title">Skills</h3>
           <div className="resume-skill-groups">
             {skillGroups.map((group, i) => 
@@ -171,9 +171,9 @@ export default function ResumePreview() {
         </section>
       ) : null
     ),
-    projects: (key) => (
+    projects: (key, sectionIndex) => (
       projects.length > 0 ? (
-        <section className="resume-section" key={key} style={pageBreaks.includes(sectionOrder.indexOf('projects')) ? { pageBreakAfter: 'always' } : {}}>
+        <section className="resume-section" key={key} style={pageBreaks.includes(sectionIndex) ? { pageBreakAfter: 'always' } : {}}>
           <h3 className="resume-section-title">Projects</h3>
           {projects.map((proj, i) => {
             const descriptionLines = proj.description
@@ -205,9 +205,9 @@ export default function ResumePreview() {
         </section>
       ) : null
     ),
-    certifications: (key) => (
+    certifications: (key, sectionIndex) => (
       certifications.length > 0 ? (
-        <section className="resume-section" key={key} style={pageBreaks.includes(sectionOrder.indexOf('certifications')) ? { pageBreakAfter: 'always' } : {}}>
+        <section className="resume-section" key={key} style={pageBreaks.includes(sectionIndex) ? { pageBreakAfter: 'always' } : {}}>
           <h3 className="resume-section-title">Certifications</h3>
           {certifications.map((cert, i) => (
             <div className="resume-entry" key={i}>
@@ -221,9 +221,9 @@ export default function ResumePreview() {
         </section>
       ) : null
     ),
-    languages: (key) => (
+    languages: (key, sectionIndex) => (
       languages.length > 0 ? (
-        <section className="resume-section" key={key} style={pageBreaks.includes(sectionOrder.indexOf('languages')) ? { pageBreakAfter: 'always' } : {}}>
+        <section className="resume-section" key={key} style={pageBreaks.includes(sectionIndex) ? { pageBreakAfter: 'always' } : {}}>
           <h3 className="resume-section-title">Languages</h3>
           <div className="resume-languages">
             {languages.map((lang, i) => (
@@ -294,7 +294,7 @@ export default function ResumePreview() {
           </div>
 
           {sectionOrder.map((sectionKey, sectionIndex) => {
-            const rendered = sectionRenderers[sectionKey]?.(sectionKey);
+            const rendered = sectionRenderers[sectionKey]?.(sectionKey, sectionIndex);
             return (
               <div key={`section-${sectionKey}-wrapper`}>
                 {rendered}

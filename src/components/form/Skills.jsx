@@ -164,7 +164,7 @@ export default function Skills() {
             <div className="skill-input-row">
               <input
                 type="text"
-                name={`skill-input-${groupIndex}-input`}
+                name={`skill-input-${groupIndex}`}
                 value={skillInputs[groupIndex] || ''}
                 onChange={e => setSkillInputs(prev => ({ ...prev, [groupIndex]: e.target.value }))}
                 onKeyDown={handleKeyDown}
