@@ -354,9 +354,9 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
           <Text style={styles.sectionTitle}>Skills</Text>
           {skillGroups.map((group, groupIndex) => 
             group.skills && group.skills.length > 0 ? (
-              <View key={`skill-group-${groupIndex}`} style={{ marginBottom: 4 * scale }}>
+              <View key={`skill-group-${groupIndex}`} style={{ marginBottom: 4 * scale, flexDirection: 'row', flexWrap: 'wrap' }}>
                 {group.category ? (
-                  <Text style={{ ...styles.bodyText, fontFamily: 'Times-Bold', marginBottom: 2 * scale }}>
+                  <Text style={{ ...styles.bodyText, fontFamily: 'Times-Bold', marginRight: 4 * scale }}>
                     {group.category}:
                   </Text>
                 ) : null}
