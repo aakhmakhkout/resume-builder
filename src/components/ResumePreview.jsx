@@ -16,18 +16,20 @@ const DEFAULT_SECTION_ORDER = [
 ];
 
 export default function ResumePreview() {
-  const { resume } = useResume();
+  const { resume, togglePageBreak } = useResume();
   const {
     personalInfo,
     workExperience,
     education,
-    skills,
+    skillGroups,
     projects,
     certifications,
     languages,
     sectionOrder: storedSectionOrder,
+    pageBreaks: storedPageBreaks,
   } = resume;
   const sectionOrder = Array.isArray(storedSectionOrder) ? storedSectionOrder : DEFAULT_SECTION_ORDER;
+  const pageBreaks = Array.isArray(storedPageBreaks) ? storedPageBreaks : [];
   const [dlMenuOpen, setDlMenuOpen] = useState(false);
   const dlMenuRef = useRef(null);
 
@@ -97,7 +99,7 @@ export default function ResumePreview() {
   const sectionRenderers = {
     summary: (key) => (
       personalInfo.summary ? (
-        <section className="resume-section" key={key}>
+        <section className="resume-section" key={key} style={pageBreaks.includes(sectionOrder.indexOf('summary')) ? { pageBreakAfter: 'always' } : {}}>
           <h3 className="resume-section-title">Professional Summary</h3>
           <p className="resume-summary">{personalInfo.summary}</p>
         </section>
@@ -105,7 +107,7 @@ export default function ResumePreview() {
     ),
     workExperience: (key) => (
       workExperience.length > 0 ? (
-        <section className="resume-section" key={key}>
+        <section className="resume-section" key={key} style={pageBreaks.includes(sectionOrder.indexOf('workExperience')) ? { pageBreakAfter: 'always' } : {}}>
           <h3 className="resume-section-title">Work Experience</h3>
           {workExperience.map((exp, i) => (
             <div className="resume-entry" key={i}>
@@ -133,7 +135,7 @@ export default function ResumePreview() {
     ),
     education: (key) => (
       education.length > 0 ? (
-        <section className="resume-section" key={key}>
+        <section className="resume-section" key={key} style={pageBreaks.includes(sectionOrder.indexOf('education')) ? { pageBreakAfter: 'always' } : {}}>
           <h3 className="resume-section-title">Education</h3>
           {education.map((edu, i) => (
             <div className="resume-entry" key={i}>
@@ -153,16 +155,25 @@ export default function ResumePreview() {
       ) : null
     ),
     skills: (key) => (
-      skills.length > 0 ? (
-        <section className="resume-section" key={key}>
+      skillGroups && skillGroups.length > 0 && skillGroups.some(g => g.skills && g.skills.length > 0) ? (
+        <section className="resume-section" key={key} style={pageBreaks.includes(sectionOrder.indexOf('skills')) ? { pageBreakAfter: 'always' } : {}}>
           <h3 className="resume-section-title">Skills</h3>
-          <p className="resume-skills-plain">{skills.join(' • ')}</p>
+          <div className="resume-skill-groups">
+            {skillGroups.map((group, i) => 
+              group.skills && group.skills.length > 0 ? (
+                <div className="resume-skill-group" key={i}>
+                  {group.category && <p className="resume-skill-category"><strong>{group.category}:</strong></p>}
+                  <p className="resume-skills-plain">{group.skills.join(' • ')}</p>
+                </div>
+              ) : null
+            )}
+          </div>
         </section>
       ) : null
     ),
     projects: (key) => (
       projects.length > 0 ? (
-        <section className="resume-section" key={key}>
+        <section className="resume-section" key={key} style={pageBreaks.includes(sectionOrder.indexOf('projects')) ? { pageBreakAfter: 'always' } : {}}>
           <h3 className="resume-section-title">Projects</h3>
           {projects.map((proj, i) => {
             const descriptionLines = proj.description
@@ -196,7 +207,7 @@ export default function ResumePreview() {
     ),
     certifications: (key) => (
       certifications.length > 0 ? (
-        <section className="resume-section" key={key}>
+        <section className="resume-section" key={key} style={pageBreaks.includes(sectionOrder.indexOf('certifications')) ? { pageBreakAfter: 'always' } : {}}>
           <h3 className="resume-section-title">Certifications</h3>
           {certifications.map((cert, i) => (
             <div className="resume-entry" key={i}>
@@ -212,7 +223,7 @@ export default function ResumePreview() {
     ),
     languages: (key) => (
       languages.length > 0 ? (
-        <section className="resume-section" key={key}>
+        <section className="resume-section" key={key} style={pageBreaks.includes(sectionOrder.indexOf('languages')) ? { pageBreakAfter: 'always' } : {}}>
           <h3 className="resume-section-title">Languages</h3>
           <div className="resume-languages">
             {languages.map((lang, i) => (
@@ -282,7 +293,26 @@ export default function ResumePreview() {
             </div>
           </div>
 
-          {sectionOrder.map((sectionKey) => sectionRenderers[sectionKey]?.(sectionKey))}
+          {sectionOrder.map((sectionKey, sectionIndex) => {
+            const rendered = sectionRenderers[sectionKey]?.(sectionKey);
+            return (
+              <div key={`section-${sectionKey}-wrapper`}>
+                {rendered}
+                {/* Page break button - between sections */}
+                {sectionIndex < sectionOrder.length - 1 && (
+                  <div className="page-break-control">
+                    <button
+                      className={`btn-page-break${pageBreaks.includes(sectionIndex) ? ' btn-page-break--active' : ''}`}
+                      onClick={() => togglePageBreak(sectionIndex)}
+                      title="Insert page break after this section"
+                    >
+                      {pageBreaks.includes(sectionIndex) ? '✓ Page break set' : '⊕ Insert page break'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
           {!hasContent && (
             <div className="resume-empty-state">

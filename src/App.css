@@ -377,6 +377,80 @@
 
 .skill-tag button:hover { color: #e07a7a; }
 
+/* ========== Skill Groups ========== */
+.skill-groups-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.skill-group {
+  background: var(--surface-2);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+  padding: 12px;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.15s;
+  cursor: grab;
+  user-select: none;
+}
+
+.skill-group:active { cursor: grabbing; }
+
+.skill-group--drop-target {
+  border-color: #5b7ec9;
+  box-shadow: 0 0 0 2px rgba(91, 126, 201, 0.35);
+}
+
+.skill-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.skill-group-handle {
+  color: #4e5567;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.skill-group-category-input {
+  flex: 1;
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: var(--accent);
+  background: var(--surface-1);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.skill-group-category-input::placeholder { color: #4e5567; }
+
+.skill-group-category-input:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(91, 126, 201, 0.15);
+}
+
+.btn-remove-group {
+  background: none;
+  border: none;
+  color: #5b7eb8;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.btn-remove-group:hover { color: #e07a7a; }
+
 /* ========== Preview Panel ========== */
 .preview-panel {
   flex: 1;
@@ -723,6 +797,65 @@
   font-size: 0.9em;
   color: #374151;
   line-height: 1.6;
+}
+
+/* ========== Grouped Skills ========== */
+.resume-skill-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.resume-skill-group {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.resume-skill-category {
+  font-size: 0.9em;
+  color: #374151;
+  margin: 0 0 4px 0;
+  font-weight: 600;
+}
+
+/* ========== Page Break Controls ========== */
+.page-break-control {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0;
+  padding: 8px 0;
+  border-top: 1px dashed #d1d5db;
+  border-bottom: 1px dashed #d1d5db;
+}
+
+.btn-page-break {
+  background: none;
+  border: 1px solid #d1d5db;
+  color: #6b7280;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-page-break:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #374151;
+}
+
+.btn-page-break--active {
+  background: #dbeafe;
+  border-color: #5b7ec9;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+@media print {
+  .page-break-control {
+    display: none;
+  }
 }
 
 .resume-languages {

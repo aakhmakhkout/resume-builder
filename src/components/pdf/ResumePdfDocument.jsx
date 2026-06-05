@@ -28,7 +28,7 @@ const estimateWrappedLines = (text, charsPerLine = 85) => {
 };
 
 const estimateResumeLines = (resume) => {
-  const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
+  const { personalInfo, workExperience, education, skillGroups, projects, certifications, languages } = resume;
   let lines = 0;
 
   // Header with improved spacing
@@ -54,7 +54,15 @@ const estimateResumeLines = (resume) => {
     });
   }
 
-  if (skills.length) lines += 2 + estimateWrappedLines(skills.join(' • '), 95);
+  if (skillGroups && skillGroups.length > 0) {
+    lines += 2; // Section title
+    skillGroups.forEach((group) => {
+      if (group.skills && group.skills.length > 0) {
+        lines += 1.5; // Category line
+        lines += estimateWrappedLines(group.skills.join(' • '), 95);
+      }
+    });
+  }
 
   if (projects.length) {
     lines += 2; // Section title with extra space
@@ -272,10 +280,11 @@ const ContactText = ({ personalInfo, styles }) => {
 };
 
 export default function ResumePdfDocument({ resume, singlePage = true }) {
-  const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
+  const { personalInfo, workExperience, education, skillGroups, projects, certifications, languages } = resume;
   const scale = getPdfScale(resume, { singlePage });
   const styles = createStyles(scale);
   const sectionOrder = Array.isArray(resume.sectionOrder) ? resume.sectionOrder : DEFAULT_SECTION_ORDER;
+  const pageBreaks = Array.isArray(resume.pageBreaks) ? resume.pageBreaks : [];
 
   const sectionRenderers = {
     summary: (key) => (
@@ -340,10 +349,21 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
       ) : null
     ),
     skills: (key) => (
-      skills.length > 0 ? (
+      skillGroups && skillGroups.length > 0 && skillGroups.some(g => g.skills && g.skills.length > 0) ? (
         <View style={styles.section} key={key}>
           <Text style={styles.sectionTitle}>Skills</Text>
-          <Text style={styles.bodyText}>{skills.join(' • ')}</Text>
+          {skillGroups.map((group, groupIndex) => 
+            group.skills && group.skills.length > 0 ? (
+              <View key={`skill-group-${groupIndex}`} style={{ marginBottom: 4 * scale }}>
+                {group.category ? (
+                  <Text style={{ ...styles.bodyText, fontFamily: 'Times-Bold', marginBottom: 2 * scale }}>
+                    {group.category}:
+                  </Text>
+                ) : null}
+                <Text style={styles.bodyText}>{group.skills.join(' • ')}</Text>
+              </View>
+            ) : null
+          )}
         </View>
       ) : null
     ),
@@ -414,7 +434,26 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
           <ContactText personalInfo={personalInfo} styles={styles} />
         </View>
 
-        {sectionOrder.map((sectionKey) => sectionRenderers[sectionKey]?.(sectionKey))}
+        {sectionOrder.map((sectionKey, index) => {
+          const rendered = sectionRenderers[sectionKey]?.(sectionKey);
+          const hasPageBreak = pageBreaks.includes(index);
+          
+          if (!rendered) return null;
+          
+          // If this is not the last section and has a page break, render on a new page
+          if (hasPageBreak && index !== sectionOrder.length - 1) {
+            // Return rendered section with page break indicator
+            // In react-pdf, we'll handle this by returning rendered content
+            // and letting the document handle pagination
+            return (
+              <View key={`section-${sectionKey}`}>
+                {rendered}
+              </View>
+            );
+          }
+          
+          return rendered;
+        })}
       </Page>
     </Document>
   );

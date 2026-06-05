@@ -33,11 +33,17 @@ const initialState = {
   },
   workExperience: [],
   education: [],
-  skills: [],
+  skillGroups: [
+    { category: 'Frontend', skills: [] },
+    { category: 'Backend', skills: [] },
+    { category: 'Tools &amp; Deployment', skills: [] },
+    { category: 'Other', skills: [] },
+  ],
   projects: [],
   certifications: [],
   languages: [],
   sectionOrder: [...DEFAULT_SECTION_ORDER],
+  pageBreaks: [],
 };
 
 function loadFromStorage() {
@@ -45,11 +51,26 @@ function loadFromStorage() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
+      
+      // Migration: convert old flat skills array to skillGroups
+      let skillGroups = parsed.skillGroups;
+      if (!skillGroups && parsed.skills && Array.isArray(parsed.skills)) {
+        // If old flat skills format exists, migrate to skillGroups
+        skillGroups = [
+          { category: 'Frontend', skills: [] },
+          { category: 'Backend', skills: [] },
+          { category: 'Tools &amp; Deployment', skills: [] },
+          { category: 'Other', skills: parsed.skills },
+        ];
+      }
+      
       return {
         ...initialState,
         ...parsed,
+        skillGroups: skillGroups || initialState.skillGroups,
         personalInfo: { ...initialState.personalInfo, ...(parsed.personalInfo || {}) },
         sectionOrder: normalizeSectionOrder(parsed.sectionOrder),
+        pageBreaks: parsed.pageBreaks || [],
       };
     }
   } catch {
@@ -106,22 +127,105 @@ export function ResumeProvider({ children }) {
     }));
   };
 
-  const addSkill = (skill) => {
-    if (skill && !resume.skills.includes(skill)) {
-      setResume(prev => ({ ...prev, skills: [...prev.skills, skill] }));
+  const addSkillGroup = (category) => {
+    if (category && category.trim()) {
+      setResume(prev => ({
+        ...prev,
+        skillGroups: [...prev.skillGroups, { category: category.trim(), skills: [] }],
+      }));
     }
   };
 
-  const removeSkill = (skill) => {
-    setResume(prev => ({ ...prev, skills: prev.skills.filter(s => s !== skill) }));
+  const removeSkillGroup = (groupIndex) => {
+    setResume(prev => ({
+      ...prev,
+      skillGroups: prev.skillGroups.filter((_, i) => i !== groupIndex),
+    }));
   };
 
-  const reorderSkills = (newOrder) => {
-    setResume(prev => ({ ...prev, skills: newOrder }));
+  const updateSkillGroupCategory = (groupIndex, newCategory) => {
+    setResume(prev => {
+      const updated = [...prev.skillGroups];
+      if (updated[groupIndex]) {
+        updated[groupIndex] = { ...updated[groupIndex], category: newCategory };
+      }
+      return { ...prev, skillGroups: updated };
+    });
   };
 
-  const reorderSections = (newOrder) => {
-    setResume(prev => ({ ...prev, sectionOrder: normalizeSectionOrder(newOrder) }));
+  const addSkillToGroup = (groupIndex, skill) => {
+    if (skill && skill.trim()) {
+      setResume(prev => {
+        const updated = [...prev.skillGroups];
+        if (updated[groupIndex]) {
+          const skills = updated[groupIndex].skills;
+          if (!skills.includes(skill.trim())) {
+            updated[groupIndex] = {
+              ...updated[groupIndex],
+              skills: [...skills, skill.trim()],
+            };
+          }
+        }
+        return { ...prev, skillGroups: updated };
+      });
+    }
+  };
+
+  const removeSkillFromGroup = (groupIndex, skillIndex) => {
+    setResume(prev => {
+      const updated = [...prev.skillGroups];
+      if (updated[groupIndex]) {
+        updated[groupIndex] = {
+          ...updated[groupIndex],
+          skills: updated[groupIndex].skills.filter((_, i) => i !== skillIndex),
+        };
+      }
+      return { ...prev, skillGroups: updated };
+    });
+  };
+
+  const reorderSkillsInGroup = (groupIndex, newSkillsOrder) => {
+    setResume(prev => {
+      const updated = [...prev.skillGroups];
+      if (updated[groupIndex]) {
+        updated[groupIndex] = { ...updated[groupIndex], skills: newSkillsOrder };
+      }
+      return { ...prev, skillGroups: updated };
+    });
+  };
+
+  const reorderSkillGroups = (newOrder) => {
+    setResume(prev => ({ ...prev, skillGroups: newOrder }));
+  };
+
+  const addPageBreak = (sectionIndex) => {
+    setResume(prev => {
+      const newBreaks = [...prev.pageBreaks];
+      if (!newBreaks.includes(sectionIndex)) {
+        newBreaks.push(sectionIndex);
+        newBreaks.sort((a, b) => a - b);
+      }
+      return { ...prev, pageBreaks: newBreaks };
+    });
+  };
+
+  const removePageBreak = (sectionIndex) => {
+    setResume(prev => ({
+      ...prev,
+      pageBreaks: prev.pageBreaks.filter(idx => idx !== sectionIndex),
+    }));
+  };
+
+  const togglePageBreak = (sectionIndex) => {
+    setResume(prev => {
+      const hasBreak = prev.pageBreaks.includes(sectionIndex);
+      if (hasBreak) {
+        return { ...prev, pageBreaks: prev.pageBreaks.filter(idx => idx !== sectionIndex) };
+      } else {
+        const newBreaks = [...prev.pageBreaks, sectionIndex].sort((a, b) => a - b);
+        return { ...prev, pageBreaks: newBreaks };
+      }
+    });
   };
 
   return (
@@ -131,10 +235,19 @@ export function ResumeProvider({ children }) {
       addEntry,
       updateEntry,
       removeEntry,
-      addSkill,
-      removeSkill,
-      reorderSkills,
-      reorderSections,
+      addSkillGroup,
+      removeSkillGroup,
+      updateSkillGroupCategory,
+      addSkillToGroup,
+      removeSkillFromGroup,
+      reorderSkillsInGroup,
+      reorderSkillGroups,
+      reorderSections: (newOrder) => {
+        setResume(prev => ({ ...prev, sectionOrder: normalizeSectionOrder(newOrder) }));
+      },
+      addPageBreak,
+      removePageBreak,
+      togglePageBreak,
     }}>
       {children}
     </ResumeContext.Provider>
