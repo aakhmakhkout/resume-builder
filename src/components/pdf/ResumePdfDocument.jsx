@@ -427,34 +427,47 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
 
   return (
     <Document title={`${personalInfo.fullName || 'Resume'} Resume`}>
-      <Page size="A4" style={styles.page}>
-        <View style={styles.header}>
-          {personalInfo.fullName ? <Text style={styles.name}>{personalInfo.fullName}</Text> : null}
-          {personalInfo.jobTitle ? <Text style={styles.jobTitle}>{personalInfo.jobTitle}</Text> : null}
-          <ContactText personalInfo={personalInfo} styles={styles} />
-        </View>
+      {(() => {
+        // Group sections by page breaks
+        const sectionGroups = [];
+        let currentGroup = [];
 
-        {sectionOrder.map((sectionKey, index) => {
+        sectionOrder.forEach((sectionKey, index) => {
           const rendered = sectionRenderers[sectionKey]?.(sectionKey);
-          const hasPageBreak = pageBreaks.includes(index);
-          
-          if (!rendered) return null;
-          
-          // If this is not the last section and has a page break, render on a new page
-          if (hasPageBreak && index !== sectionOrder.length - 1) {
-            // Return rendered section with page break indicator
-            // In react-pdf, we'll handle this by returning rendered content
-            // and letting the document handle pagination
-            return (
-              <View key={`section-${sectionKey}`}>
-                {rendered}
-              </View>
-            );
+          if (rendered) {
+            currentGroup.push(rendered);
           }
-          
-          return rendered;
-        })}
-      </Page>
+          // Check if this section has a page break after it
+          if (pageBreaks.includes(index) && index !== sectionOrder.length - 1) {
+            sectionGroups.push(currentGroup);
+            currentGroup = [];
+          }
+        });
+
+        // Add remaining sections as last group
+        if (currentGroup.length > 0) {
+          sectionGroups.push(currentGroup);
+        }
+
+        // If no page breaks, wrap everything in one group
+        if (sectionGroups.length === 0) {
+          sectionGroups.push(sectionOrder.map((sectionKey) => sectionRenderers[sectionKey]?.(sectionKey)).filter(Boolean));
+        }
+
+        // Render each group on a separate page
+        return sectionGroups.map((group, pageIndex) => (
+          <Page size="A4" style={styles.page} key={`page-${pageIndex}`}>
+            {pageIndex === 0 && (
+              <View style={styles.header}>
+                {personalInfo.fullName ? <Text style={styles.name}>{personalInfo.fullName}</Text> : null}
+                {personalInfo.jobTitle ? <Text style={styles.jobTitle}>{personalInfo.jobTitle}</Text> : null}
+                <ContactText personalInfo={personalInfo} styles={styles} />
+              </View>
+            )}
+            {group}
+          </Page>
+        ));
+      })()}
     </Document>
   );
 }

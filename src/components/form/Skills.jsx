@@ -100,15 +100,17 @@ export default function Skills() {
     setDraggingSkillIdx({});
   };
 
-  const handleKeyDown = (e) => {
+  const handleCategoryKeyDown = (e) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
-      if (e.currentTarget.name?.startsWith('skill-input-')) {
-        const groupIndex = parseInt(e.currentTarget.name.split('-')[2]);
-        handleAddSkill(groupIndex);
-      } else if (e.currentTarget.name === 'category-input') {
-        handleAddCategory();
-      }
+      handleAddCategory();
+    }
+  };
+
+  const handleKeyDown = (e, groupIndex) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      handleAddSkill(groupIndex);
     }
   };
 
@@ -120,10 +122,9 @@ export default function Skills() {
       <div className="skills-input-row">
         <input
           type="text"
-          name="category-input"
           value={newCategoryInput}
           onChange={e => setNewCategoryInput(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={handleCategoryKeyDown}
           placeholder="Add a new category"
         />
         <button className="btn-add" onClick={handleAddCategory}>Add Category</button>
@@ -164,10 +165,9 @@ export default function Skills() {
             <div className="skill-input-row">
               <input
                 type="text"
-                name={`skill-input-${groupIndex}`}
                 value={skillInputs[groupIndex] || ''}
                 onChange={e => setSkillInputs(prev => ({ ...prev, [groupIndex]: e.target.value }))}
-                onKeyDown={handleKeyDown}
+                onKeyDown={(e) => handleKeyDown(e, groupIndex)}
                 placeholder="Add a skill (press Enter or comma)"
               />
               <button className="btn-add" onClick={() => handleAddSkill(groupIndex)}>Add</button>

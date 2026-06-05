@@ -162,7 +162,7 @@ export default function ResumePreview() {
             {skillGroups.map((group, i) => 
               group.skills && group.skills.length > 0 ? (
                 <div className="resume-skill-group" key={i}>
-                  {group.category && <p className="resume-skill-category"><strong>{group.category}:</strong></p>}
+                  {group.category && <p className="resume-skill-category">{group.category}:</p>}
                   <p className="resume-skills-plain">{group.skills.join(' • ')}</p>
                 </div>
               ) : null
