@@ -816,10 +816,7 @@
   color: #374151;
   margin: 0 0 4px 0;
   font-weight: 600;
-}
-
-.resume-skill-category::after {
-  content: ':';
+  display: inline-block;
 }
 
 /* ========== Page Break Controls ========== */
