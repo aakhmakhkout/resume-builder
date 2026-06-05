@@ -818,6 +818,10 @@
   font-weight: 600;
 }
 
+.resume-skill-category::after {
+  content: ':';
+}
+
 /* ========== Page Break Controls ========== */
 .page-break-control {
   display: flex;

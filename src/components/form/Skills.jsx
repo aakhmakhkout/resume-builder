@@ -178,21 +178,25 @@ export default function Skills() {
               <p className="skills-drag-hint">Drag tags to reorder</p>
             )}
             <div className="skills-tags">
-              {group.skills.map((skill, skillIndex) => (
-                <span
-                  key={`${skill}-${skillIndex}`}
-                  className={`skill-tag${dragOverSkillIdx.groupIndex === groupIndex && dragOverSkillIdx.skillIndex === skillIndex && draggingSkillIdx.skillIndex !== skillIndex ? ' skill-tag--drop-target' : ''}`}
-                  draggable
-                  onDragStart={e => handleSkillDragStart(e, groupIndex, skillIndex)}
-                  onDragOver={e => handleSkillDragOver(e, groupIndex, skillIndex)}
-                  onDrop={e => handleSkillDrop(e, groupIndex, skillIndex)}
-                  onDragEnd={handleSkillDragEnd}
-                >
-                  <span className="skill-drag-handle" title="Drag to reorder">⠿</span>
-                  {skill}
-                  <button onClick={() => removeSkillFromGroup(groupIndex, skillIndex)} title="Remove">×</button>
-                </span>
-              ))}
+              {group.skills.map((skill, skillIndex) => {
+                const isDropTarget = dragOverSkillIdx.groupIndex === groupIndex && dragOverSkillIdx.skillIndex === skillIndex && draggingSkillIdx.skillIndex !== skillIndex;
+                const classNameStr = `skill-tag${isDropTarget ? ' skill-tag--drop-target' : ''}`;
+                return (
+                  <span
+                    key={`${skill}-${skillIndex}`}
+                    className={classNameStr}
+                    draggable
+                    onDragStart={e => handleSkillDragStart(e, groupIndex, skillIndex)}
+                    onDragOver={e => handleSkillDragOver(e, groupIndex, skillIndex)}
+                    onDrop={e => handleSkillDrop(e, groupIndex, skillIndex)}
+                    onDragEnd={handleSkillDragEnd}
+                  >
+                    <span className="skill-drag-handle" title="Drag to reorder">⠿</span>
+                    {skill}
+                    <button onClick={() => removeSkillFromGroup(groupIndex, skillIndex)} title="Remove">×</button>
+                  </span>
+                );
+              })}
             </div>
           </div>
         ))}
