@@ -5,6 +5,15 @@ import { useRef, useState, useEffect } from 'react';
 const PREVIEW_URL_REVOKE_DELAY_MS = 60_000;
 // Download URLs can be revoked quickly after the browser starts the file save.
 const DOWNLOAD_URL_REVOKE_DELAY_MS = 5000;
+const LAYOUT_STORAGE_KEY = 'resume_builder_layout';
+const LAYOUT_OPTIONS = [
+  { value: 'traditional', label: 'Layout 1 · Traditional' },
+  { value: 'two-column', label: 'Layout 2 · Two Column' },
+  { value: 'modern', label: 'Layout 3 · Modern Professional' },
+];
+const LAYOUT_VALUES = new Set(LAYOUT_OPTIONS.map((option) => option.value));
+const LEFT_COLUMN_SECTIONS = new Set(['skills', 'languages', 'certifications']);
+
 const DEFAULT_SECTION_ORDER = [
   'summary',
   'workExperience',
@@ -14,6 +23,19 @@ const DEFAULT_SECTION_ORDER = [
   'certifications',
   'languages',
 ];
+
+const getInitialLayout = () => {
+  try {
+    const stored = localStorage.getItem(LAYOUT_STORAGE_KEY);
+    return LAYOUT_VALUES.has(stored) ? stored : 'traditional';
+  } catch {
+    return 'traditional';
+  }
+};
+
+const renderDateRange = (startDate, endDate, current) => (
+  `${startDate || ''}${startDate && (endDate || current) ? ' – ' : ''}${current ? 'Present' : endDate || ''}`.trim()
+);
 
 export default function ResumePreview() {
   const { resume } = useResume();
@@ -28,6 +50,7 @@ export default function ResumePreview() {
     sectionOrder: storedSectionOrder,
   } = resume;
   const sectionOrder = Array.isArray(storedSectionOrder) ? storedSectionOrder : DEFAULT_SECTION_ORDER;
+  const [selectedLayout, setSelectedLayout] = useState(getInitialLayout);
   const [dlMenuOpen, setDlMenuOpen] = useState(false);
   const dlMenuRef = useRef(null);
 
@@ -42,12 +65,20 @@ export default function ResumePreview() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(LAYOUT_STORAGE_KEY, selectedLayout);
+    } catch {
+      // ignore storage errors
+    }
+  }, [selectedLayout]);
+
   const buildResumePdfBlob = async ({ singlePage }) => {
     const [{ pdf }, { default: ResumePdfDocument }] = await Promise.all([
       import('@react-pdf/renderer'),
       import('./pdf/ResumePdfDocument'),
     ]);
-    const doc = <ResumePdfDocument resume={resume} singlePage={singlePage} />;
+    const doc = <ResumePdfDocument resume={resume} singlePage={singlePage} layout={selectedLayout} />;
     return pdf(doc).toBlob();
   };
 
@@ -94,19 +125,52 @@ export default function ResumePreview() {
 
   const hasContent = personalInfo.fullName || personalInfo.email;
 
-  const sectionRenderers = {
-    summary: (key) => (
-      personalInfo.summary ? (
-        <section className="resume-section" key={key}>
-          <h3 className="resume-section-title">Professional Summary</h3>
+  const renderContact = (stacked = false) => (
+    <div className={`resume-contact${stacked ? ' resume-contact--stacked' : ''}`}>
+      {personalInfo.email && <span>{personalInfo.email}</span>}
+      {personalInfo.phone && <span>{personalInfo.phone}</span>}
+      {personalInfo.location && <span>{personalInfo.location}</span>}
+      {personalInfo.linkedin && (
+        <span>
+          <a href={personalInfo.linkedin} target="_blank" rel="noreferrer">{personalInfo.linkedin}</a>
+        </span>
+      )}
+      {personalInfo.github && (
+        <span>
+          <a href={personalInfo.github} target="_blank" rel="noreferrer">{personalInfo.github}</a>
+        </span>
+      )}
+    </div>
+  );
+
+  const renderSection = (sectionKey, key, variant = 'default') => {
+    const isCompact = variant === 'compact';
+    const isModern = variant === 'modern';
+    const isModernWide = isModern && ['summary', 'workExperience', 'projects'].includes(sectionKey);
+    const sectionClass = [
+      'resume-section',
+      isCompact ? 'resume-section--compact' : '',
+      isModern ? 'resume-section--modern' : '',
+      isModernWide ? 'resume-section--modern-wide' : '',
+    ].filter(Boolean).join(' ');
+    const titleClass = [
+      'resume-section-title',
+      isModern ? 'resume-section-title--modern' : '',
+    ].filter(Boolean).join(' ');
+
+    if (sectionKey === 'summary') {
+      return personalInfo.summary ? (
+        <section className={sectionClass} key={key}>
+          <h3 className={titleClass}>Professional Summary</h3>
           <p className="resume-summary">{personalInfo.summary}</p>
         </section>
-      ) : null
-    ),
-    workExperience: (key) => (
-      workExperience.length > 0 ? (
-        <section className="resume-section" key={key}>
-          <h3 className="resume-section-title">Work Experience</h3>
+      ) : null;
+    }
+
+    if (sectionKey === 'workExperience') {
+      return workExperience.length > 0 ? (
+        <section className={sectionClass} key={key}>
+          <h3 className={titleClass}>Work Experience</h3>
           {workExperience.map((exp, i) => (
             <div className="resume-entry" key={i}>
               <div className="resume-entry-header">
@@ -114,9 +178,7 @@ export default function ResumePreview() {
                   <span className="resume-entry-title">{exp.jobTitle}</span>
                   {exp.company && <span className="resume-entry-subtitle"> — {exp.company}</span>}
                 </div>
-                <span className="resume-entry-date">
-                  {exp.startDate}{exp.startDate && (exp.endDate || exp.current) ? ' – ' : ''}{exp.current ? 'Present' : exp.endDate}
-                </span>
+                <span className="resume-entry-date">{renderDateRange(exp.startDate, exp.endDate, exp.current)}</span>
               </div>
               {exp.location && <p className="resume-entry-location">{exp.location}</p>}
               {exp.description && (
@@ -129,12 +191,13 @@ export default function ResumePreview() {
             </div>
           ))}
         </section>
-      ) : null
-    ),
-    education: (key) => (
-      education.length > 0 ? (
-        <section className="resume-section" key={key}>
-          <h3 className="resume-section-title">Education</h3>
+      ) : null;
+    }
+
+    if (sectionKey === 'education') {
+      return education.length > 0 ? (
+        <section className={sectionClass} key={key}>
+          <h3 className={titleClass}>Education</h3>
           {education.map((edu, i) => (
             <div className="resume-entry" key={i}>
               <div className="resume-entry-header">
@@ -142,31 +205,31 @@ export default function ResumePreview() {
                   <span className="resume-entry-title">{edu.degree}{edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ''}</span>
                   {edu.institution && <span className="resume-entry-subtitle"> — {edu.institution}</span>}
                 </div>
-                <span className="resume-entry-date">
-                  {edu.startDate}{edu.startDate && edu.endDate ? ' – ' : ''}{edu.endDate}
-                </span>
+                <span className="resume-entry-date">{renderDateRange(edu.startDate, edu.endDate, false)}</span>
               </div>
               {edu.gpa && <p className="resume-entry-location">GPA: {edu.gpa}</p>}
             </div>
           ))}
         </section>
-      ) : null
-    ),
-    skills: (key) => (
-      skills.length > 0 ? (
-        <section className="resume-section" key={key}>
-          <h3 className="resume-section-title">Skills</h3>
+      ) : null;
+    }
+
+    if (sectionKey === 'skills') {
+      return skills.length > 0 ? (
+        <section className={sectionClass} key={key}>
+          <h3 className={titleClass}>Skills</h3>
           <p className="resume-skills-plain">{skills.join(' • ')}</p>
         </section>
-      ) : null
-    ),
-    projects: (key) => (
-      projects.length > 0 ? (
-        <section className="resume-section" key={key}>
-          <h3 className="resume-section-title">Projects</h3>
+      ) : null;
+    }
+
+    if (sectionKey === 'projects') {
+      return projects.length > 0 ? (
+        <section className={sectionClass} key={key}>
+          <h3 className={titleClass}>Projects</h3>
           {projects.map((proj, i) => {
             const descriptionLines = proj.description
-              ? proj.description.split('\n').map(line => line.trim()).filter(Boolean)
+              ? proj.description.split('\n').map((line) => line.trim()).filter(Boolean)
               : [];
             return (
               <div className="resume-entry" key={i}>
@@ -192,12 +255,13 @@ export default function ResumePreview() {
             );
           })}
         </section>
-      ) : null
-    ),
-    certifications: (key) => (
-      certifications.length > 0 ? (
-        <section className="resume-section" key={key}>
-          <h3 className="resume-section-title">Certifications</h3>
+      ) : null;
+    }
+
+    if (sectionKey === 'certifications') {
+      return certifications.length > 0 ? (
+        <section className={sectionClass} key={key}>
+          <h3 className={titleClass}>Certifications</h3>
           {certifications.map((cert, i) => (
             <div className="resume-entry" key={i}>
               <div className="resume-entry-header">
@@ -208,12 +272,13 @@ export default function ResumePreview() {
             </div>
           ))}
         </section>
-      ) : null
-    ),
-    languages: (key) => (
-      languages.length > 0 ? (
-        <section className="resume-section" key={key}>
-          <h3 className="resume-section-title">Languages</h3>
+      ) : null;
+    }
+
+    if (sectionKey === 'languages') {
+      return languages.length > 0 ? (
+        <section className={sectionClass} key={key}>
+          <h3 className={titleClass}>Languages</h3>
           <div className="resume-languages">
             {languages.map((lang, i) => (
               <span className="resume-language-item" key={i}>
@@ -222,8 +287,59 @@ export default function ResumePreview() {
             ))}
           </div>
         </section>
-      ) : null
-    ),
+      ) : null;
+    }
+
+    return null;
+  };
+
+  const leftColumnOrder = sectionOrder.filter((sectionKey) => LEFT_COLUMN_SECTIONS.has(sectionKey));
+  const rightColumnOrder = sectionOrder.filter((sectionKey) => !LEFT_COLUMN_SECTIONS.has(sectionKey));
+
+  const renderTraditionalLayout = () => (
+    <>
+      <div className="resume-header">
+        {personalInfo.fullName && <h1 className="resume-name">{personalInfo.fullName}</h1>}
+        {personalInfo.jobTitle && <p className="resume-job-title">{personalInfo.jobTitle}</p>}
+        {renderContact(false)}
+      </div>
+      {sectionOrder.map((sectionKey) => renderSection(sectionKey, sectionKey, 'default'))}
+    </>
+  );
+
+  const renderTwoColumnLayout = () => (
+    <div className="resume-layout-two-column">
+      <aside className="resume-sidebar">
+        {personalInfo.fullName && <h1 className="resume-name resume-name--sidebar">{personalInfo.fullName}</h1>}
+        {personalInfo.jobTitle && <p className="resume-job-title resume-job-title--sidebar">{personalInfo.jobTitle}</p>}
+        {renderContact(true)}
+        {leftColumnOrder.map((sectionKey) => renderSection(sectionKey, `left-${sectionKey}`, 'compact'))}
+      </aside>
+      <main className="resume-main-column">
+        {rightColumnOrder.map((sectionKey) => renderSection(sectionKey, `right-${sectionKey}`, 'default'))}
+      </main>
+    </div>
+  );
+
+  const renderModernLayout = () => (
+    <>
+      <div className="resume-header resume-header--modern">
+        <div>
+          {personalInfo.fullName && <h1 className="resume-name resume-name--modern">{personalInfo.fullName}</h1>}
+          {personalInfo.jobTitle && <p className="resume-job-title resume-job-title--modern">{personalInfo.jobTitle}</p>}
+        </div>
+        {renderContact(false)}
+      </div>
+      <div className="resume-modern-grid">
+        {sectionOrder.map((sectionKey) => renderSection(sectionKey, `modern-${sectionKey}`, 'modern'))}
+      </div>
+    </>
+  );
+
+  const renderLayout = () => {
+    if (selectedLayout === 'two-column') return renderTwoColumnLayout();
+    if (selectedLayout === 'modern') return renderModernLayout();
+    return renderTraditionalLayout();
   };
 
   return (
@@ -231,6 +347,18 @@ export default function ResumePreview() {
       <div className="preview-toolbar">
         <h2 className="preview-title">Live Preview</h2>
         <div className="preview-toolbar-actions">
+          <div className="layout-selector">
+            <label htmlFor="resume-layout-select">Layout</label>
+            <select
+              id="resume-layout-select"
+              value={selectedLayout}
+              onChange={(e) => setSelectedLayout(e.target.value)}
+            >
+              {LAYOUT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
           <button className="btn-preview" onClick={handlePreviewPDF} disabled={!hasContent}>
             👁 Preview PDF (Single Page)
           </button>
@@ -240,7 +368,7 @@ export default function ResumePreview() {
             </button>
             <button
               className="btn-download btn-download-arrow"
-              onClick={() => setDlMenuOpen(o => !o)}
+              onClick={() => setDlMenuOpen((o) => !o)}
               disabled={!hasContent}
               aria-label="More download options"
             >
@@ -260,29 +388,8 @@ export default function ResumePreview() {
         <small><em>Note: For large content, single-page mode may reduce font size to fit everything on one page. Use multi-page mode for better readability if content is extensive.</em></small>
       </div>
       <div className="resume-paper-wrapper">
-        <div className="resume-paper">
-          {/* Header */}
-          <div className="resume-header">
-            {personalInfo.fullName && <h1 className="resume-name">{personalInfo.fullName}</h1>}
-            {personalInfo.jobTitle && <p className="resume-job-title">{personalInfo.jobTitle}</p>}
-            <div className="resume-contact">
-              {personalInfo.email && <span>{personalInfo.email}</span>}
-              {personalInfo.phone && <span>{personalInfo.phone}</span>}
-              {personalInfo.location && <span>{personalInfo.location}</span>}
-              {personalInfo.linkedin && (
-                <span>
-                  <a href={personalInfo.linkedin} target="_blank" rel="noreferrer">{personalInfo.linkedin}</a>
-                </span>
-              )}
-              {personalInfo.github && (
-                <span>
-                  <a href={personalInfo.github} target="_blank" rel="noreferrer">{personalInfo.github}</a>
-                </span>
-              )}
-            </div>
-          </div>
-
-          {sectionOrder.map((sectionKey) => sectionRenderers[sectionKey]?.(sectionKey))}
+        <div className={`resume-paper resume-layout-${selectedLayout}`}>
+          {renderLayout()}
 
           {!hasContent && (
             <div className="resume-empty-state">

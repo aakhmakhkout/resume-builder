@@ -19,6 +19,10 @@ const DEFAULT_SECTION_ORDER = [
   'certifications',
   'languages',
 ];
+const LEFT_COLUMN_SECTIONS = new Set(['skills', 'languages', 'certifications']);
+const LAYOUT_VALUES = new Set(['traditional', 'two-column', 'modern']);
+
+const normalizeLayout = (layout) => (LAYOUT_VALUES.has(layout) ? layout : 'traditional');
 
 const estimateWrappedLines = (text, charsPerLine = 85) => {
   if (!text) return 0;
@@ -31,14 +35,13 @@ const estimateResumeLines = (resume) => {
   const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
   let lines = 0;
 
-  // Header with improved spacing
-  if (personalInfo.fullName) lines += 2.5; // Name with extra spacing below
-  if (personalInfo.jobTitle) lines += 1.5; // Job title with extra spacing below
+  if (personalInfo.fullName) lines += 2.5;
+  if (personalInfo.jobTitle) lines += 1.5;
   if (personalInfo.email || personalInfo.phone || personalInfo.location || personalInfo.linkedin || personalInfo.github) lines += 2;
   lines += estimateWrappedLines(personalInfo.summary, 95);
 
   if (workExperience.length) {
-    lines += 2; // Section title with extra space
+    lines += 2;
     workExperience.forEach((exp) => {
       lines += 2;
       if (exp.location) lines += 1;
@@ -47,7 +50,7 @@ const estimateResumeLines = (resume) => {
   }
 
   if (education.length) {
-    lines += 2; // Section title with extra space
+    lines += 2;
     education.forEach((edu) => {
       lines += 2;
       if (edu.gpa) lines += 1;
@@ -57,7 +60,7 @@ const estimateResumeLines = (resume) => {
   if (skills.length) lines += 2 + estimateWrappedLines(skills.join(' • '), 95);
 
   if (projects.length) {
-    lines += 2; // Section title with extra space
+    lines += 2;
     projects.forEach((proj) => {
       lines += 2;
       if (proj.technologies) lines += estimateWrappedLines(`Technologies: ${proj.technologies}`, 95);
@@ -74,148 +77,231 @@ const estimateResumeLines = (resume) => {
 const getPdfScale = (resume, { singlePage }) => {
   if (singlePage) {
     const estimatedLines = estimateResumeLines(resume);
-    const targetLines = 80; // Slightly increased to account for better spacing
+    const targetLines = 80;
     if (!estimatedLines || estimatedLines <= targetLines) return 1;
     return clamp((targetLines / estimatedLines) * 0.98, 0.55, 1);
   }
-  // For multi-page, use appropriate scale for better readability
-  // Reduce scale based on content volume to maintain consistent spacing
   const estimatedLines = estimateResumeLines(resume);
   if (estimatedLines <= 80) return 1;
   if (estimatedLines <= 160) return 0.95;
-  if (estimatedLines <= 240) return 0.90;
+  if (estimatedLines <= 240) return 0.9;
   if (estimatedLines <= 320) return 0.85;
-  return 0.80; // Very large content, use 0.80 scale
+  return 0.8;
 };
 
-const createStyles = (scale) =>
-  StyleSheet.create({
-    page: {
-      paddingTop: 36,
-      paddingBottom: 36,
-      paddingHorizontal: 36,
-      fontFamily: 'Times-Roman',
-      fontSize: 10 * scale,
-      color: '#111111',
-      lineHeight: 1.5,
-    },
-    header: {
-      textAlign: 'center',
-      borderBottomWidth: 1.2,
-      borderBottomColor: '#1d4ed8',
-      paddingBottom: 8 * scale,
-      marginBottom: 10 * scale,
-    },
-    name: {
-      fontSize: 20 * scale,
-      fontFamily: 'Times-Bold',
-      marginBottom: 6 * scale,
-    },
-    jobTitle: {
-      fontSize: 10.5 * scale,
-      color: '#1d4ed8',
-      marginBottom: 4 * scale,
-    },
-    contactText: {
-      fontSize: 8.2 * scale,
-      color: '#4b5563',
-      lineHeight: 1.35,
-    },
-    contactSeparator: {
-      color: '#9ca3af',
-    },
-    contactLink: {
-      color: '#1d4ed8',
-      textDecoration: 'none',
-    },
-    section: {
-      marginBottom: 10 * scale,
-    },
-    sectionTitle: {
-      fontSize: 8.8 * scale,
-      fontFamily: 'Times-Bold',
-      textTransform: 'uppercase',
-      color: '#1d4ed8',
-      borderBottomWidth: 0.7,
-      borderBottomColor: '#bfdbfe',
-      paddingBottom: 2 * scale,
-      marginBottom: 6 * scale,
-      letterSpacing: 0.7 * scale,
-    },
-    entry: {
-      marginBottom: 7 * scale,
-    },
-    entryHeader: {
-      display: 'flex',
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      gap: 8 * scale,
-    },
-    entryHeadingWrap: {
-      display: 'flex',
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      flexGrow: 1,
-      gap: 2 * scale,
-    },
-    entryTitle: {
-      fontFamily: 'Times-Bold',
-      fontSize: 9.5 * scale,
-    },
-    entrySubtitle: {
-      fontSize: 9.5 * scale,
-      color: '#374151',
-    },
-    entryDate: {
-      fontSize: 8.2 * scale,
-      color: '#6b7280',
-      textAlign: 'right',
-      flexShrink: 0,
-    },
-    subText: {
-      fontSize: 8.2 * scale,
-      color: '#6b7280',
-      marginTop: 1 * scale,
-    },
-    projectTechText: {
-      fontSize: 8.2 * scale,
-      color: '#6b7280',
-      marginTop: 1 * scale,
-      fontStyle: 'italic',
-    },
-    bodyText: {
-      fontSize: 9 * scale,
-      color: '#374151',
-      marginTop: 2 * scale,
-      lineHeight: 1.45,
-    },
-    bulletList: {
-      marginTop: 2 * scale,
-    },
-    bulletRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      marginBottom: 1 * scale,
-      break: 'avoid',
-    },
-    bulletSymbol: {
-      fontSize: 9 * scale,
-      marginRight: 4 * scale,
-      lineHeight: 1.45,
-    },
-    bulletText: {
-      flex: 1,
-      fontSize: 9 * scale,
-      color: '#374151',
-      lineHeight: 1.45,
-    },
-    projectLink: {
-      fontSize: 7.8 * scale,
-      color: '#1d4ed8',
-      textDecoration: 'none',
-      marginTop: 1 * scale,
-    },
-  });
+const createStyles = (scale) => StyleSheet.create({
+  page: {
+    paddingTop: 36,
+    paddingBottom: 36,
+    paddingHorizontal: 36,
+    fontFamily: 'Times-Roman',
+    fontSize: 10 * scale,
+    color: '#111111',
+    lineHeight: 1.5,
+  },
+  header: {
+    textAlign: 'center',
+    borderBottomWidth: 1.2,
+    borderBottomColor: '#1d4ed8',
+    paddingBottom: 8 * scale,
+    marginBottom: 10 * scale,
+  },
+  modernHeader: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    borderBottomWidth: 1,
+    borderBottomColor: '#cbd5e1',
+    paddingBottom: 8 * scale,
+    marginBottom: 10 * scale,
+    gap: 10 * scale,
+  },
+  name: {
+    fontSize: 20 * scale,
+    fontFamily: 'Times-Bold',
+    marginBottom: 6 * scale,
+  },
+  modernName: {
+    color: '#0f172a',
+    marginBottom: 2 * scale,
+  },
+  jobTitle: {
+    fontSize: 10.5 * scale,
+    color: '#1d4ed8',
+    marginBottom: 4 * scale,
+  },
+  modernJobTitle: {
+    color: '#334155',
+    marginBottom: 0,
+  },
+  contactText: {
+    fontSize: 8.2 * scale,
+    color: '#4b5563',
+    lineHeight: 1.35,
+  },
+  contactSeparator: {
+    color: '#9ca3af',
+  },
+  contactLink: {
+    color: '#1d4ed8',
+    textDecoration: 'none',
+  },
+  sidebarContactText: {
+    fontSize: 8.2 * scale,
+    color: '#334155',
+    marginBottom: 3 * scale,
+    lineHeight: 1.4,
+  },
+  section: {
+    marginBottom: 10 * scale,
+  },
+  sectionCompact: {
+    marginBottom: 8 * scale,
+  },
+  sectionModern: {
+    marginBottom: 8 * scale,
+    borderWidth: 0.7,
+    borderColor: '#e2e8f0',
+    padding: 6 * scale,
+    borderRadius: 2,
+    backgroundColor: '#f8fafc',
+  },
+  sectionTitle: {
+    fontSize: 8.8 * scale,
+    fontFamily: 'Times-Bold',
+    textTransform: 'uppercase',
+    color: '#1d4ed8',
+    borderBottomWidth: 0.7,
+    borderBottomColor: '#bfdbfe',
+    paddingBottom: 2 * scale,
+    marginBottom: 6 * scale,
+    letterSpacing: 0.7 * scale,
+  },
+  sectionTitleCompact: {
+    fontSize: 8.3 * scale,
+  },
+  sectionTitleModern: {
+    color: '#0f172a',
+    borderBottomColor: '#cbd5e1',
+  },
+  entry: {
+    marginBottom: 7 * scale,
+  },
+  entryHeader: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8 * scale,
+  },
+  entryHeadingWrap: {
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    flexGrow: 1,
+    gap: 2 * scale,
+  },
+  entryTitle: {
+    fontFamily: 'Times-Bold',
+    fontSize: 9.5 * scale,
+  },
+  entrySubtitle: {
+    fontSize: 9.5 * scale,
+    color: '#374151',
+  },
+  entryDate: {
+    fontSize: 8.2 * scale,
+    color: '#6b7280',
+    textAlign: 'right',
+    flexShrink: 0,
+  },
+  subText: {
+    fontSize: 8.2 * scale,
+    color: '#6b7280',
+    marginTop: 1 * scale,
+  },
+  projectTechText: {
+    fontSize: 8.2 * scale,
+    color: '#6b7280',
+    marginTop: 1 * scale,
+    fontStyle: 'italic',
+  },
+  bodyText: {
+    fontSize: 9 * scale,
+    color: '#374151',
+    marginTop: 2 * scale,
+    lineHeight: 1.45,
+  },
+  bulletList: {
+    marginTop: 2 * scale,
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 1 * scale,
+    break: 'avoid',
+  },
+  bulletSymbol: {
+    fontSize: 9 * scale,
+    marginRight: 4 * scale,
+    lineHeight: 1.45,
+  },
+  bulletText: {
+    flex: 1,
+    fontSize: 9 * scale,
+    color: '#374151',
+    lineHeight: 1.45,
+  },
+  projectLink: {
+    fontSize: 7.8 * scale,
+    color: '#1d4ed8',
+    textDecoration: 'none',
+    marginTop: 1 * scale,
+  },
+  twoColumnWrap: {
+    display: 'flex',
+    flexDirection: 'row',
+    gap: 10 * scale,
+  },
+  sidebar: {
+    width: '32%',
+    backgroundColor: '#eff6ff',
+    borderRightWidth: 1,
+    borderRightColor: '#bfdbfe',
+    padding: 7 * scale,
+  },
+  sidebarName: {
+    fontSize: 15 * scale,
+    marginBottom: 2 * scale,
+  },
+  sidebarJobTitle: {
+    fontSize: 9 * scale,
+    color: '#334155',
+    marginBottom: 4 * scale,
+  },
+  sidebarContactWrap: {
+    marginBottom: 6 * scale,
+  },
+  mainColumn: {
+    width: '68%',
+    paddingLeft: 2 * scale,
+  },
+  modernGrid: {
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8 * scale,
+  },
+  modernItemWide: {
+    width: '100%',
+  },
+  modernItemHalf: {
+    width: '48%',
+  },
+  modernContactWrap: {
+    maxWidth: '52%',
+  },
+});
 
 const renderDateRange = (startDate, endDate, current) => {
   const normalizedStart = startDate || '';
@@ -271,25 +357,78 @@ const ContactText = ({ personalInfo, styles }) => {
   );
 };
 
-export default function ResumePdfDocument({ resume, singlePage = true }) {
-  const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
-  const scale = getPdfScale(resume, { singlePage });
-  const styles = createStyles(scale);
-  const sectionOrder = Array.isArray(resume.sectionOrder) ? resume.sectionOrder : DEFAULT_SECTION_ORDER;
+const SidebarContactText = ({ personalInfo, styles }) => {
+  const lines = [
+    personalInfo.email?.trim(),
+    personalInfo.phone?.trim(),
+    personalInfo.location?.trim(),
+    personalInfo.linkedin?.trim(),
+    personalInfo.github?.trim(),
+  ].filter(Boolean);
 
-  const sectionRenderers = {
+  if (!lines.length) return null;
+
+  return (
+    <View style={styles.sidebarContactWrap}>
+      {lines.map((value, index) => {
+        const href =
+          value === personalInfo.email?.trim()
+            ? `mailto:${value}`
+            : value === personalInfo.linkedin?.trim() || value === personalInfo.github?.trim()
+              ? normalizeUrl(value)
+              : '';
+        if (href) {
+          return (
+            <Link key={`sidebar-link-${index}`} src={href} style={[styles.sidebarContactText, styles.contactLink]}>
+              {value}
+            </Link>
+          );
+        }
+        return (
+          <Text key={`sidebar-text-${index}`} style={styles.sidebarContactText}>{value}</Text>
+        );
+      })}
+    </View>
+  );
+};
+
+const createSectionRenderers = ({
+  personalInfo,
+  workExperience,
+  education,
+  skills,
+  projects,
+  certifications,
+  languages,
+  styles,
+  variant = 'default',
+}) => {
+  const sectionStyle = [styles.section];
+  const sectionTitleStyle = [styles.sectionTitle];
+
+  if (variant === 'compact') {
+    sectionStyle.push(styles.sectionCompact);
+    sectionTitleStyle.push(styles.sectionTitleCompact);
+  }
+
+  if (variant === 'modern') {
+    sectionStyle.push(styles.sectionModern);
+    sectionTitleStyle.push(styles.sectionTitleModern);
+  }
+
+  return {
     summary: (key) => (
       personalInfo.summary ? (
-        <View style={styles.section} key={key}>
-          <Text style={styles.sectionTitle}>Professional Summary</Text>
+        <View style={sectionStyle} key={key}>
+          <Text style={sectionTitleStyle}>Professional Summary</Text>
           <Text style={styles.bodyText}>{personalInfo.summary}</Text>
         </View>
       ) : null
     ),
     workExperience: (key) => (
       workExperience.length > 0 ? (
-        <View style={styles.section} key={key}>
-          <Text style={styles.sectionTitle}>Work Experience</Text>
+        <View style={sectionStyle} key={key}>
+          <Text style={sectionTitleStyle}>Work Experience</Text>
           {workExperience.map((exp, index) => (
             <View style={styles.entry} key={`work-${index}`}>
               <View style={styles.entryHeader}>
@@ -304,9 +443,7 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
               {exp.location ? <Text style={styles.subText}>{exp.location}</Text> : null}
               {exp.description
                 ? exp.description.split('\n').filter(isNonEmptyLine).map((line, lineIndex) => (
-                  <Text key={`work-desc-${index}-${lineIndex}`} style={styles.bodyText}>
-                    {line}
-                  </Text>
+                  <Text key={`work-desc-${index}-${lineIndex}`} style={styles.bodyText}>{line}</Text>
                 ))
                 : null}
             </View>
@@ -316,16 +453,14 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
     ),
     education: (key) => (
       education.length > 0 ? (
-        <View style={styles.section} key={key}>
-          <Text style={styles.sectionTitle}>Education</Text>
+        <View style={sectionStyle} key={key}>
+          <Text style={sectionTitleStyle}>Education</Text>
           {education.map((edu, index) => (
             <View style={styles.entry} key={`edu-${index}`}>
               <View style={styles.entryHeader}>
                 <View style={styles.entryHeadingWrap}>
                   {edu.degree || edu.fieldOfStudy ? (
-                    <Text style={styles.entryTitle}>
-                      {edu.degree || ''}{edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ''}
-                    </Text>
+                    <Text style={styles.entryTitle}>{edu.degree || ''}{edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ''}</Text>
                   ) : null}
                   {edu.institution ? <Text style={styles.entrySubtitle}>— {edu.institution}</Text> : null}
                 </View>
@@ -341,16 +476,16 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
     ),
     skills: (key) => (
       skills.length > 0 ? (
-        <View style={styles.section} key={key}>
-          <Text style={styles.sectionTitle}>Skills</Text>
+        <View style={sectionStyle} key={key}>
+          <Text style={sectionTitleStyle}>Skills</Text>
           <Text style={styles.bodyText}>{skills.join(' • ')}</Text>
         </View>
       ) : null
     ),
     projects: (key) => (
       projects.length > 0 ? (
-        <View style={styles.section} key={key}>
-          <Text style={styles.sectionTitle}>Projects</Text>
+        <View style={sectionStyle} key={key}>
+          <Text style={sectionTitleStyle}>Projects</Text>
           {projects.map((proj, index) => {
             const descriptionLines = proj.description
               ? proj.description.split('\n').filter(isNonEmptyLine)
@@ -359,7 +494,7 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
             return (
               <View style={styles.entry} key={`proj-${index}`}>
                 {proj.name ? <Text style={styles.entryTitle}>{proj.name}</Text> : null}
-                {projectLink ? <Link src={projectLink} style={styles.projectLink}>{projectLink}</Link> : null}
+                {projectLink ? <Link src={normalizeUrl(projectLink)} style={styles.projectLink}>{projectLink}</Link> : null}
                 {proj.technologies ? <Text style={styles.projectTechText}>Technologies: {proj.technologies}</Text> : null}
                 {descriptionLines.length > 0 ? (
                   <View style={styles.bulletList}>
@@ -379,8 +514,8 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
     ),
     certifications: (key) => (
       certifications.length > 0 ? (
-        <View style={styles.section} key={key}>
-          <Text style={styles.sectionTitle}>Certifications</Text>
+        <View style={sectionStyle} key={key}>
+          <Text style={sectionTitleStyle}>Certifications</Text>
           {certifications.map((cert, index) => (
             <View style={styles.entry} key={`cert-${index}`}>
               <View style={styles.entryHeader}>
@@ -395,8 +530,8 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
     ),
     languages: (key) => (
       languages.length > 0 ? (
-        <View style={styles.section} key={key}>
-          <Text style={styles.sectionTitle}>Languages</Text>
+        <View style={sectionStyle} key={key}>
+          <Text style={sectionTitleStyle}>Languages</Text>
           <Text style={styles.bodyText}>
             {languages.map((lang) => `${lang.language}${lang.proficiency ? ` (${lang.proficiency})` : ''}`).join(' • ')}
           </Text>
@@ -404,17 +539,114 @@ export default function ResumePdfDocument({ resume, singlePage = true }) {
       ) : null
     ),
   };
+};
+
+export default function ResumePdfDocument({ resume, singlePage = true, layout = 'traditional' }) {
+  const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
+  const scale = getPdfScale(resume, { singlePage });
+  const styles = createStyles(scale);
+  const sectionOrder = Array.isArray(resume.sectionOrder) ? resume.sectionOrder : DEFAULT_SECTION_ORDER;
+  const normalizedLayout = normalizeLayout(layout);
+
+  const defaultSectionRenderers = createSectionRenderers({
+    personalInfo,
+    workExperience,
+    education,
+    skills,
+    projects,
+    certifications,
+    languages,
+    styles,
+  });
+
+  const compactSectionRenderers = createSectionRenderers({
+    personalInfo,
+    workExperience,
+    education,
+    skills,
+    projects,
+    certifications,
+    languages,
+    styles,
+    variant: 'compact',
+  });
+
+  const modernSectionRenderers = createSectionRenderers({
+    personalInfo,
+    workExperience,
+    education,
+    skills,
+    projects,
+    certifications,
+    languages,
+    styles,
+    variant: 'modern',
+  });
+
+  const leftColumnOrder = sectionOrder.filter((sectionKey) => LEFT_COLUMN_SECTIONS.has(sectionKey));
+  const rightColumnOrder = sectionOrder.filter((sectionKey) => !LEFT_COLUMN_SECTIONS.has(sectionKey));
+
+  const renderTraditional = () => (
+    <>
+      <View style={styles.header}>
+        {personalInfo.fullName ? <Text style={styles.name}>{personalInfo.fullName}</Text> : null}
+        {personalInfo.jobTitle ? <Text style={styles.jobTitle}>{personalInfo.jobTitle}</Text> : null}
+        <ContactText personalInfo={personalInfo} styles={styles} />
+      </View>
+      {sectionOrder.map((sectionKey) => defaultSectionRenderers[sectionKey]?.(sectionKey))}
+    </>
+  );
+
+  const renderTwoColumn = () => (
+    <View style={styles.twoColumnWrap}>
+      <View style={styles.sidebar}>
+        {personalInfo.fullName ? <Text style={[styles.name, styles.sidebarName]}>{personalInfo.fullName}</Text> : null}
+        {personalInfo.jobTitle ? <Text style={styles.sidebarJobTitle}>{personalInfo.jobTitle}</Text> : null}
+        <SidebarContactText personalInfo={personalInfo} styles={styles} />
+        {leftColumnOrder.map((sectionKey) => compactSectionRenderers[sectionKey]?.(`left-${sectionKey}`))}
+      </View>
+      <View style={styles.mainColumn}>
+        {rightColumnOrder.map((sectionKey) => defaultSectionRenderers[sectionKey]?.(`right-${sectionKey}`))}
+      </View>
+    </View>
+  );
+
+  const renderModern = () => (
+    <>
+      <View style={styles.modernHeader}>
+        <View>
+          {personalInfo.fullName ? <Text style={[styles.name, styles.modernName]}>{personalInfo.fullName}</Text> : null}
+          {personalInfo.jobTitle ? <Text style={[styles.jobTitle, styles.modernJobTitle]}>{personalInfo.jobTitle}</Text> : null}
+        </View>
+        <View style={styles.modernContactWrap}>
+          <ContactText personalInfo={personalInfo} styles={styles} />
+        </View>
+      </View>
+      <View style={styles.modernGrid}>
+        {sectionOrder.map((sectionKey) => {
+          const isWide = ['summary', 'workExperience', 'projects'].includes(sectionKey);
+          const renderedSection = modernSectionRenderers[sectionKey]?.(`modern-${sectionKey}`);
+          if (!renderedSection) return null;
+          return (
+            <View key={`modern-wrap-${sectionKey}`} style={isWide ? styles.modernItemWide : styles.modernItemHalf}>
+              {renderedSection}
+            </View>
+          );
+        })}
+      </View>
+    </>
+  );
+
+  const renderLayout = () => {
+    if (normalizedLayout === 'two-column') return renderTwoColumn();
+    if (normalizedLayout === 'modern') return renderModern();
+    return renderTraditional();
+  };
 
   return (
     <Document title={`${personalInfo.fullName || 'Resume'} Resume`}>
       <Page size="A4" style={styles.page}>
-        <View style={styles.header}>
-          {personalInfo.fullName ? <Text style={styles.name}>{personalInfo.fullName}</Text> : null}
-          {personalInfo.jobTitle ? <Text style={styles.jobTitle}>{personalInfo.jobTitle}</Text> : null}
-          <ContactText personalInfo={personalInfo} styles={styles} />
-        </View>
-
-        {sectionOrder.map((sectionKey) => sectionRenderers[sectionKey]?.(sectionKey))}
+        {renderLayout()}
       </Page>
     </Document>
   );
