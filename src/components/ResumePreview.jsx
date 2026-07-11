@@ -1,11 +1,13 @@
 import { useResume } from '../context/ResumeContext';
 import { useRef, useState, useEffect } from 'react';
+import { getSafeSectionOrder, getSinglePageFitSettings } from '../utils/singlePageFit';
 
 // Keep preview URLs alive longer so users can read/open the new tab reliably.
 const PREVIEW_URL_REVOKE_DELAY_MS = 60_000;
 // Download URLs can be revoked quickly after the browser starts the file save.
 const DOWNLOAD_URL_REVOKE_DELAY_MS = 5000;
 const LAYOUT_STORAGE_KEY = 'resume_builder_layout';
+const SINGLE_PAGE_MODE_STORAGE_KEY = 'resume_builder_single_page_mode';
 const LAYOUT_OPTIONS = [
   { value: 'traditional', label: 'Layout 1 · Traditional' },
   { value: 'two-column', label: 'Layout 2 · Two Column' },
@@ -14,22 +16,20 @@ const LAYOUT_OPTIONS = [
 const LAYOUT_VALUES = new Set(LAYOUT_OPTIONS.map((option) => option.value));
 const LEFT_COLUMN_SECTIONS = new Set(['skills', 'languages', 'certifications']);
 
-const DEFAULT_SECTION_ORDER = [
-  'summary',
-  'workExperience',
-  'education',
-  'skills',
-  'projects',
-  'certifications',
-  'languages',
-];
-
 const getInitialLayout = () => {
   try {
     const stored = localStorage.getItem(LAYOUT_STORAGE_KEY);
     return LAYOUT_VALUES.has(stored) ? stored : 'traditional';
   } catch {
     return 'traditional';
+  }
+};
+
+const getInitialSinglePageMode = () => {
+  try {
+    return localStorage.getItem(SINGLE_PAGE_MODE_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
   }
 };
 
@@ -49,10 +49,12 @@ export default function ResumePreview() {
     languages,
     sectionOrder: storedSectionOrder,
   } = resume;
-  const sectionOrder = Array.isArray(storedSectionOrder) ? storedSectionOrder : DEFAULT_SECTION_ORDER;
+  const sectionOrder = getSafeSectionOrder(storedSectionOrder);
   const [selectedLayout, setSelectedLayout] = useState(getInitialLayout);
+  const [singlePageMode, setSinglePageMode] = useState(getInitialSinglePageMode);
   const [dlMenuOpen, setDlMenuOpen] = useState(false);
   const dlMenuRef = useRef(null);
+  const singlePageFit = getSinglePageFitSettings(resume, { enabled: singlePageMode, layout: selectedLayout });
 
   // Close the dropdown when clicking outside
   useEffect(() => {
@@ -73,12 +75,28 @@ export default function ResumePreview() {
     }
   }, [selectedLayout]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(SINGLE_PAGE_MODE_STORAGE_KEY, String(singlePageMode));
+    } catch {
+      // ignore storage errors
+    }
+  }, [singlePageMode]);
+
   const buildResumePdfBlob = async ({ singlePage }) => {
     const [{ pdf }, { default: ResumePdfDocument }] = await Promise.all([
       import('@react-pdf/renderer'),
       import('./pdf/ResumePdfDocument'),
     ]);
-    const doc = <ResumePdfDocument resume={resume} singlePage={singlePage} layout={selectedLayout} />;
+    const effectiveSinglePage = singlePageMode || singlePage;
+    const doc = (
+      <ResumePdfDocument
+        resume={resume}
+        singlePage={effectiveSinglePage}
+        singlePageMode={singlePageMode}
+        layout={selectedLayout}
+      />
+    );
     return pdf(doc).toBlob();
   };
 
@@ -359,6 +377,15 @@ export default function ResumePreview() {
               ))}
             </select>
           </div>
+          <label className="single-page-toggle" htmlFor="single-page-mode-toggle">
+            <input
+              id="single-page-mode-toggle"
+              type="checkbox"
+              checked={singlePageMode}
+              onChange={(e) => setSinglePageMode(e.target.checked)}
+            />
+            Single Page Mode
+          </label>
           <button className="btn-preview" onClick={handlePreviewPDF} disabled={!hasContent}>
             👁 Preview PDF (Single Page)
           </button>
@@ -377,18 +404,37 @@ export default function ResumePreview() {
             {dlMenuOpen && (
               <div className="download-menu">
                 <button onClick={handleDownloadSinglePage}>📄 Single-Page PDF (Default)</button>
-                <button onClick={handleDownloadMultiPage}>📑 Multi-Page PDF</button>
-                <button onClick={handlePreviewMultiPage}>👁 Multi-Page Preview</button>
+                {!singlePageMode ? (
+                  <>
+                    <button onClick={handleDownloadMultiPage}>📑 Multi-Page PDF</button>
+                    <button onClick={handlePreviewMultiPage}>👁 Multi-Page Preview</button>
+                  </>
+                ) : (
+                  <button type="button" disabled>Single Page Mode locks export to one-page fitting</button>
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
       <div className="preview-note">
-        <small><em>Note: For large content, single-page mode may reduce font size to fit everything on one page. Use multi-page mode for better readability if content is extensive.</em></small>
+        <small><em>
+          {singlePageMode
+            ? `Single Page Mode is active. Spacing and typography are reduced within safe limits to fit one page${singlePageFit.isAtSafeLimit ? '; content may still continue naturally onto the next page if needed.' : '.'}`
+            : 'Single Page Mode is off. Preview and PDF keep standard spacing.'}
+        </em></small>
       </div>
       <div className="resume-paper-wrapper">
-        <div className={`resume-paper resume-layout-${selectedLayout}`}>
+        <div
+          className={`resume-paper resume-layout-${selectedLayout}${singlePageMode ? ' resume-paper--single-page-mode' : ''}`}
+          style={{
+            '--resume-font-scale': singlePageFit.fontScale,
+            '--resume-line-height-scale': singlePageFit.lineHeightScale,
+            '--resume-padding-scale': singlePageFit.pagePaddingScale,
+            '--resume-margin-scale': singlePageFit.marginScale,
+            '--resume-section-gap-scale': singlePageFit.sectionGapScale,
+          }}
+        >
           {renderLayout()}
 
           {!hasContent && (

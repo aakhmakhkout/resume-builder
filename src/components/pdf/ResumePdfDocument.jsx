@@ -1,6 +1,6 @@
 import { Document, Page, Text, View, Link, StyleSheet } from '@react-pdf/renderer';
+import { getLegacyPdfScale, getSafeSectionOrder, getSinglePageFitSettings } from '../../utils/singlePageFit';
 
-const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const isNonEmptyLine = (line) => line.trim();
 const normalizeUrl = (value) => {
   if (!value) return '';
@@ -10,101 +10,27 @@ const normalizeUrl = (value) => {
   return `https://${trimmed}`;
 };
 
-const DEFAULT_SECTION_ORDER = [
-  'summary',
-  'workExperience',
-  'education',
-  'skills',
-  'projects',
-  'certifications',
-  'languages',
-];
 const LEFT_COLUMN_SECTIONS = new Set(['skills', 'languages', 'certifications']);
 const LAYOUT_VALUES = new Set(['traditional', 'two-column', 'modern']);
 
 const normalizeLayout = (layout) => (LAYOUT_VALUES.has(layout) ? layout : 'traditional');
 
-const estimateWrappedLines = (text, charsPerLine = 85) => {
-  if (!text) return 0;
-  return text
-    .split('\n')
-    .reduce((sum, line) => sum + Math.max(1, Math.ceil(line.trim().length / charsPerLine)), 0);
-};
-
-const estimateResumeLines = (resume) => {
-  const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
-  let lines = 0;
-
-  if (personalInfo.fullName) lines += 2.5;
-  if (personalInfo.jobTitle) lines += 1.5;
-  if (personalInfo.email || personalInfo.phone || personalInfo.location || personalInfo.linkedin || personalInfo.github) lines += 2;
-  lines += estimateWrappedLines(personalInfo.summary, 95);
-
-  if (workExperience.length) {
-    lines += 2;
-    workExperience.forEach((exp) => {
-      lines += 2;
-      if (exp.location) lines += 1;
-      lines += estimateWrappedLines(exp.description, 88);
-    });
-  }
-
-  if (education.length) {
-    lines += 2;
-    education.forEach((edu) => {
-      lines += 2;
-      if (edu.gpa) lines += 1;
-    });
-  }
-
-  if (skills.length) lines += 2 + estimateWrappedLines(skills.join(' • '), 95);
-
-  if (projects.length) {
-    lines += 2;
-    projects.forEach((proj) => {
-      lines += 2;
-      if (proj.technologies) lines += estimateWrappedLines(`Technologies: ${proj.technologies}`, 95);
-      if (proj.description) lines += estimateWrappedLines(proj.description, 88);
-    });
-  }
-
-  if (certifications.length) lines += 2 + certifications.length * 2;
-  if (languages.length) lines += 2 + estimateWrappedLines(languages.map((l) => `${l.language}${l.proficiency ? ` (${l.proficiency})` : ''}`).join(' • '), 95);
-
-  return lines;
-};
-
-const getPdfScale = (resume, { singlePage }) => {
-  if (singlePage) {
-    const estimatedLines = estimateResumeLines(resume);
-    const targetLines = 80;
-    if (!estimatedLines || estimatedLines <= targetLines) return 1;
-    return clamp((targetLines / estimatedLines) * 0.98, 0.55, 1);
-  }
-  const estimatedLines = estimateResumeLines(resume);
-  if (estimatedLines <= 80) return 1;
-  if (estimatedLines <= 160) return 0.95;
-  if (estimatedLines <= 240) return 0.9;
-  if (estimatedLines <= 320) return 0.85;
-  return 0.8;
-};
-
-const createStyles = (scale) => StyleSheet.create({
+const createStyles = ({ scale, fitSettings }) => StyleSheet.create({
   page: {
-    paddingTop: 36,
-    paddingBottom: 36,
-    paddingHorizontal: 36,
+    paddingTop: 36 * fitSettings.pagePaddingScale,
+    paddingBottom: 36 * fitSettings.pagePaddingScale,
+    paddingHorizontal: 36 * fitSettings.pagePaddingScale,
     fontFamily: 'Times-Roman',
     fontSize: 10 * scale,
     color: '#111111',
-    lineHeight: 1.5,
+    lineHeight: 1.5 * fitSettings.lineHeightScale,
   },
   header: {
     textAlign: 'center',
     borderBottomWidth: 1.2,
     borderBottomColor: '#1d4ed8',
-    paddingBottom: 8 * scale,
-    marginBottom: 10 * scale,
+    paddingBottom: 8 * scale * fitSettings.marginScale,
+    marginBottom: 10 * scale * fitSettings.sectionGapScale,
   },
   modernHeader: {
     display: 'flex',
@@ -113,14 +39,14 @@ const createStyles = (scale) => StyleSheet.create({
     alignItems: 'flex-start',
     borderBottomWidth: 1,
     borderBottomColor: '#cbd5e1',
-    paddingBottom: 8 * scale,
-    marginBottom: 10 * scale,
+    paddingBottom: 8 * scale * fitSettings.marginScale,
+    marginBottom: 10 * scale * fitSettings.sectionGapScale,
     gap: 10 * scale,
   },
   name: {
     fontSize: 20 * scale,
     fontFamily: 'Times-Bold',
-    marginBottom: 6 * scale,
+    marginBottom: 6 * scale * fitSettings.marginScale,
   },
   modernName: {
     color: '#0f172a',
@@ -129,7 +55,7 @@ const createStyles = (scale) => StyleSheet.create({
   jobTitle: {
     fontSize: 10.5 * scale,
     color: '#1d4ed8',
-    marginBottom: 4 * scale,
+    marginBottom: 4 * scale * fitSettings.marginScale,
   },
   modernJobTitle: {
     color: '#334155',
@@ -150,20 +76,20 @@ const createStyles = (scale) => StyleSheet.create({
   sidebarContactText: {
     fontSize: 8.2 * scale,
     color: '#334155',
-    marginBottom: 3 * scale,
+    marginBottom: 3 * scale * fitSettings.marginScale,
     lineHeight: 1.4,
   },
   section: {
-    marginBottom: 10 * scale,
+    marginBottom: 10 * scale * fitSettings.sectionGapScale,
   },
   sectionCompact: {
-    marginBottom: 8 * scale,
+    marginBottom: 8 * scale * fitSettings.sectionGapScale,
   },
   sectionModern: {
-    marginBottom: 8 * scale,
+    marginBottom: 8 * scale * fitSettings.sectionGapScale,
     borderWidth: 0.7,
     borderColor: '#e2e8f0',
-    padding: 6 * scale,
+    padding: 6 * scale * fitSettings.marginScale,
     borderRadius: 2,
     backgroundColor: '#f8fafc',
   },
@@ -174,8 +100,8 @@ const createStyles = (scale) => StyleSheet.create({
     color: '#1d4ed8',
     borderBottomWidth: 0.7,
     borderBottomColor: '#bfdbfe',
-    paddingBottom: 2 * scale,
-    marginBottom: 6 * scale,
+    paddingBottom: 2 * scale * fitSettings.marginScale,
+    marginBottom: 6 * scale * fitSettings.marginScale,
     letterSpacing: 0.7 * scale,
   },
   sectionTitleCompact: {
@@ -186,7 +112,7 @@ const createStyles = (scale) => StyleSheet.create({
     borderBottomColor: '#cbd5e1',
   },
   entry: {
-    marginBottom: 7 * scale,
+    marginBottom: 7 * scale * fitSettings.marginScale,
   },
   entryHeader: {
     display: 'flex',
@@ -218,27 +144,27 @@ const createStyles = (scale) => StyleSheet.create({
   subText: {
     fontSize: 8.2 * scale,
     color: '#6b7280',
-    marginTop: 1 * scale,
+    marginTop: 1 * scale * fitSettings.marginScale,
   },
   projectTechText: {
     fontSize: 8.2 * scale,
     color: '#6b7280',
-    marginTop: 1 * scale,
+    marginTop: 1 * scale * fitSettings.marginScale,
     fontStyle: 'italic',
   },
   bodyText: {
     fontSize: 9 * scale,
     color: '#374151',
-    marginTop: 2 * scale,
+    marginTop: 2 * scale * fitSettings.marginScale,
     lineHeight: 1.45,
   },
   bulletList: {
-    marginTop: 2 * scale,
+    marginTop: 2 * scale * fitSettings.marginScale,
   },
   bulletRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 1 * scale,
+    marginBottom: 1 * scale * fitSettings.marginScale,
     break: 'avoid',
   },
   bulletSymbol: {
@@ -256,41 +182,41 @@ const createStyles = (scale) => StyleSheet.create({
     fontSize: 7.8 * scale,
     color: '#1d4ed8',
     textDecoration: 'none',
-    marginTop: 1 * scale,
+    marginTop: 1 * scale * fitSettings.marginScale,
   },
   twoColumnWrap: {
     display: 'flex',
     flexDirection: 'row',
-    gap: 10 * scale,
+    gap: 10 * scale * fitSettings.marginScale,
   },
   sidebar: {
     width: '32%',
     backgroundColor: '#eff6ff',
     borderRightWidth: 1,
     borderRightColor: '#bfdbfe',
-    padding: 7 * scale,
+    padding: 7 * scale * fitSettings.marginScale,
   },
   sidebarName: {
     fontSize: 15 * scale,
-    marginBottom: 2 * scale,
+    marginBottom: 2 * scale * fitSettings.marginScale,
   },
   sidebarJobTitle: {
     fontSize: 9 * scale,
     color: '#334155',
-    marginBottom: 4 * scale,
+    marginBottom: 4 * scale * fitSettings.marginScale,
   },
   sidebarContactWrap: {
-    marginBottom: 6 * scale,
+    marginBottom: 6 * scale * fitSettings.marginScale,
   },
   mainColumn: {
     width: '68%',
-    paddingLeft: 2 * scale,
+    paddingLeft: 2 * scale * fitSettings.marginScale,
   },
   modernGrid: {
     display: 'flex',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8 * scale,
+    gap: 8 * scale * fitSettings.marginScale,
   },
   modernItemWide: {
     width: '100%',
@@ -541,12 +467,20 @@ const createSectionRenderers = ({
   };
 };
 
-export default function ResumePdfDocument({ resume, singlePage = true, layout = 'traditional' }) {
+export default function ResumePdfDocument({
+  resume,
+  singlePage = true,
+  singlePageMode = false,
+  layout = 'traditional',
+}) {
   const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
-  const scale = getPdfScale(resume, { singlePage });
-  const styles = createStyles(scale);
-  const sectionOrder = Array.isArray(resume.sectionOrder) ? resume.sectionOrder : DEFAULT_SECTION_ORDER;
   const normalizedLayout = normalizeLayout(layout);
+  const fitSettings = getSinglePageFitSettings(resume, { enabled: singlePageMode, layout: normalizedLayout });
+  const scale = singlePageMode
+    ? fitSettings.fontScale
+    : getLegacyPdfScale(resume, { singlePage });
+  const styles = createStyles({ scale, fitSettings });
+  const sectionOrder = getSafeSectionOrder(resume.sectionOrder);
 
   const defaultSectionRenderers = createSectionRenderers({
     personalInfo,
