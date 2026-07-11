@@ -276,6 +276,11 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 
+.entry-card--drop-target {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(91, 126, 201, 0.25);
+}
+
 .entry-card-header {
   display: flex;
   align-items: center;
@@ -284,6 +289,50 @@
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--accent-dim);
+}
+
+.entry-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.entry-reorder-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-move {
+  background: #253553;
+  color: #99b6e5;
+  border: 1px solid #385080;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  font-size: 0.75rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.btn-move:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-move:not(:disabled):hover {
+  background: #2f4670;
+}
+
+.entry-drag-handle {
+  color: #64748b;
+  font-size: 1rem;
+  cursor: grab;
+  line-height: 1;
+}
+
+.entry-drag-handle:active {
+  cursor: grabbing;
 }
 
 /* ========== Skills ========== */
@@ -376,6 +425,20 @@
 }
 
 .skill-tag button:hover { color: #e07a7a; }
+
+.skill-move-btn {
+  color: #7da0d8;
+  font-size: 0.8rem;
+}
+
+.skill-move-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.skill-move-btn:hover:disabled {
+  color: #7da0d8;
+}
 
 /* ========== Preview Panel ========== */
 .preview-panel {

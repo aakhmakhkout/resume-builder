@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { moveItemInArray } from '../utils/reorder';
 
 const STORAGE_KEY = 'resume_builder_data';
 
@@ -124,6 +125,21 @@ export function ResumeProvider({ children }) {
     setResume(prev => ({ ...prev, sectionOrder: normalizeSectionOrder(newOrder) }));
   };
 
+  const reorderEntries = (section, fromIndex, toIndex) => {
+    setResume((prev) => {
+      const entries = prev[section];
+      if (!Array.isArray(entries)) return prev;
+      const reordered = moveItemInArray(entries, fromIndex, toIndex);
+      if (reordered === entries) return prev;
+      return { ...prev, [section]: reordered };
+    });
+  };
+
+  const moveEntry = (section, index, direction) => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    reorderEntries(section, index, targetIndex);
+  };
+
   return (
     <ResumeContext.Provider value={{
       resume,
@@ -135,6 +151,8 @@ export function ResumeProvider({ children }) {
       removeSkill,
       reorderSkills,
       reorderSections,
+      reorderEntries,
+      moveEntry,
     }}>
       {children}
     </ResumeContext.Provider>

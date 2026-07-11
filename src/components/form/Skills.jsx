@@ -1,12 +1,18 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useResume } from '../../context/ResumeContext';
+import useReorderableEntries from './useReorderableEntries';
 
 export default function Skills() {
-  const { resume, addSkill, removeSkill, reorderSkills } = useResume();
+  const { resume, addSkill, removeSkill, moveEntry } = useResume();
   const [input, setInput] = useState('');
-  const [dragOverIdx, setDragOverIdx] = useState(null);
-  const [draggingIdx, setDraggingIdx] = useState(null);
-  const dragIdxRef = useRef(null);
+  const {
+    dragOverIdx,
+    draggingIdx,
+    handleDragStart,
+    handleDragOver,
+    handleDrop,
+    handleDragEnd,
+  } = useReorderableEntries('skills');
 
   const handleAdd = () => {
     const trimmed = input.trim();
@@ -23,36 +29,6 @@ export default function Skills() {
     }
   };
 
-  const handleDragStart = (e, i) => {
-    dragIdxRef.current = i;
-    setDraggingIdx(i);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e, i) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverIdx(i);
-  };
-
-  const handleDrop = (e, i) => {
-    e.preventDefault();
-    const from = dragIdxRef.current;
-    if (from === null || from === i) return;
-    const updated = [...resume.skills];
-    const [moved] = updated.splice(from, 1);
-    updated.splice(i, 0, moved);
-    reorderSkills(updated);
-    dragIdxRef.current = null;
-    setDragOverIdx(null);
-  };
-
-  const handleDragEnd = () => {
-    dragIdxRef.current = null;
-    setDragOverIdx(null);
-    setDraggingIdx(null);
-  };
-
   return (
     <div className="form-section">
       <h2 className="section-title">Skills</h2>
@@ -67,7 +43,7 @@ export default function Skills() {
         <button className="btn-add" onClick={handleAdd}>Add</button>
       </div>
       {resume.skills.length > 0 && (
-        <p className="skills-drag-hint">Drag tags to reorder</p>
+        <p className="skills-drag-hint">Drag, or use ↑/↓ to reorder</p>
       )}
       <div className="skills-tags">
         {resume.skills.map((skill, i) => (
@@ -82,6 +58,26 @@ export default function Skills() {
           >
             <span className="skill-drag-handle" title="Drag to reorder">⠿</span>
             {skill}
+            <button
+              type="button"
+              className="skill-move-btn"
+              onClick={() => moveEntry('skills', i, 'up')}
+              disabled={i === 0}
+              title="Move up"
+              aria-label="Move skill up"
+            >
+              ↑
+            </button>
+            <button
+              type="button"
+              className="skill-move-btn"
+              onClick={() => moveEntry('skills', i, 'down')}
+              disabled={i >= resume.skills.length - 1}
+              title="Move down"
+              aria-label="Move skill down"
+            >
+              ↓
+            </button>
             <button onClick={() => removeSkill(skill)} title="Remove">×</button>
           </span>
         ))}
