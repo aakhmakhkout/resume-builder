@@ -14,6 +14,66 @@
   --blue: #5b7ec9;
 }
 
+/* ========== New ATS Template ========== */
+.resume-paper-v2 {
+  background: #fff;
+  color: #111;
+}
+
+.resume-header-v2 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.resume-name-v2 {
+  margin: 0 0 4px 0;
+  font-size: 2em;
+  letter-spacing: 0.3px;
+}
+
+.resume-contact-v2 {
+  margin: 0;
+  font-size: 0.78em;
+  color: #333;
+}
+
+.resume-section-v2 {
+  page-break-inside: avoid;
+}
+
+.resume-section-title-v2 {
+  margin: 0 0 5px 0;
+  padding-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom-style: solid;
+}
+
+.resume-entry-v2 {
+  margin-bottom: 4px;
+}
+
+.resume-entry-head-v2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.resume-date-v2 {
+  white-space: nowrap;
+  font-size: 0.9em;
+}
+
+.resume-indent-v2 {
+  margin: 1px 0 0 14px;
+}
+
+.resume-subtext-v2 {
+  margin: 1px 0 0 0;
+  font-size: 0.92em;
+}
+
 /* ========== Outer Root ========== */
 .app-root {
   display: flex;
@@ -128,6 +188,10 @@
 .section-order-handle {
   color: var(--text-muted);
   font-size: 0.95rem;
+}
+
+.section-order-controls {
+  margin-left: auto;
 }
 
 .section-header {
@@ -438,6 +502,56 @@
 
 .skill-move-btn:hover:disabled {
   color: #7da0d8;
+}
+
+.custom-section-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface-2);
+  margin-top: 12px;
+}
+
+.custom-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.custom-section-name-input {
+  flex: 1;
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--accent);
+  background: var(--surface-1);
+}
+
+.section-customization-block {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.section-style-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #1c2028;
+}
+
+.section-style-card summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.subsection-title {
+  color: var(--accent);
+  margin: 0;
+  font-size: 0.9rem;
 }
 
 /* ========== Preview Panel ========== */

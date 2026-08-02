@@ -1,19 +1,11 @@
 import { useRef, useState } from 'react';
 import { useResume } from '../../context/ResumeContext';
-
-const SECTION_LABELS = {
-  summary: 'Professional Summary',
-  workExperience: 'Work Experience',
-  education: 'Education',
-  skills: 'Skills',
-  projects: 'Projects',
-  certifications: 'Certifications',
-  languages: 'Languages',
-};
+import { moveItemInArray } from '../../utils/reorder';
+import { resolveSectionLabel } from '../../utils/sections';
 
 export default function SectionOrder() {
   const { resume, reorderSections } = useResume();
-  const { sectionOrder } = resume;
+  const { sectionOrder, customSections } = resume;
   const [dragOverIdx, setDragOverIdx] = useState(null);
   const dragIdxRef = useRef(null);
 
@@ -45,6 +37,14 @@ export default function SectionOrder() {
     setDragOverIdx(null);
   };
 
+  const moveSection = (index, direction) => {
+    const to = direction === 'up' ? index - 1 : index + 1;
+    const updated = moveItemInArray(sectionOrder, index, to);
+    if (updated !== sectionOrder) {
+      reorderSections(updated);
+    }
+  };
+
   return (
     <div className="form-section section-order">
       <div className="section-header">
@@ -70,7 +70,11 @@ export default function SectionOrder() {
             >
               ⋮⋮
             </span>
-            <span>{SECTION_LABELS[sectionKey] || sectionKey}</span>
+            <span>{resolveSectionLabel(sectionKey, customSections)}</span>
+            <div className="entry-reorder-controls section-order-controls">
+              <button type="button" className="btn-move" onClick={() => moveSection(index, 'up')} disabled={index === 0}>↑</button>
+              <button type="button" className="btn-move" onClick={() => moveSection(index, 'down')} disabled={index >= sectionOrder.length - 1}>↓</button>
+            </div>
           </div>
         ))}
       </div>

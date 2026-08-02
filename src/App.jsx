@@ -7,6 +7,8 @@ import Skills from './components/form/Skills';
 import Projects from './components/form/Projects';
 import Certifications from './components/form/Certifications';
 import Languages from './components/form/Languages';
+import DesignCustomizationPanel from './components/form/DesignCustomizationPanel';
+import CustomSections from './components/form/CustomSections';
 import ResumePreview from './components/ResumePreview';
 import './App.css';
 
@@ -23,12 +25,14 @@ function App() {
             <div className="form-panel-content">
               <PersonalInfo />
               <SectionOrder />
+              <DesignCustomizationPanel />
               <WorkExperience />
               <Education />
               <Skills />
               <Projects />
               <Certifications />
               <Languages />
+              <CustomSections />
             </div>
           </div>
           <ResumePreview />

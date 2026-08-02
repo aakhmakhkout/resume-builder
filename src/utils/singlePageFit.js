@@ -1,15 +1,7 @@
+import { BUILTIN_SECTION_KEYS } from './sections';
+
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const lerp = (start, end, t) => start + (end - start) * t;
-
-const DEFAULT_SECTION_ORDER = [
-  'summary',
-  'workExperience',
-  'education',
-  'skills',
-  'projects',
-  'certifications',
-  'languages',
-];
 
 const estimateWrappedLines = (text, charsPerLine = 85) => {
   if (!text) return 0;
@@ -18,8 +10,8 @@ const estimateWrappedLines = (text, charsPerLine = 85) => {
     .reduce((sum, line) => sum + Math.max(1, Math.ceil(line.trim().length / charsPerLine)), 0);
 };
 
-const estimateResumeLines = (resume, layout = 'traditional') => {
-  const { personalInfo, workExperience, education, skills, projects, certifications, languages } = resume;
+const estimateResumeLines = (resume) => {
+  const { personalInfo, workExperience, education, skills, projects, certifications, languages, customSections = [] } = resume;
   let lines = 0;
 
   if (personalInfo.fullName) lines += 2.5;
@@ -62,28 +54,30 @@ const estimateResumeLines = (resume, layout = 'traditional') => {
       95,
     );
   }
-
-  if (layout === 'two-column') return lines * 0.84;
-  if (layout === 'modern') return lines * 0.9;
+  customSections.forEach((section) => {
+    if (!section?.entries?.length) return;
+    lines += 2;
+    section.entries.forEach((entry) => {
+      lines += 2;
+      Object.values(entry.values || {}).forEach((value) => {
+        lines += estimateWrappedLines(value, 90);
+      });
+    });
+  });
   return lines;
 };
 
-const getTargetLines = (layout) => {
-  if (layout === 'two-column') return 84;
-  if (layout === 'modern') return 82;
-  return 80;
-};
-
-export function getSafeSectionOrder(sectionOrder) {
-  if (!Array.isArray(sectionOrder)) return [...DEFAULT_SECTION_ORDER];
-  const filtered = sectionOrder.filter((section) => DEFAULT_SECTION_ORDER.includes(section));
-  const missing = DEFAULT_SECTION_ORDER.filter((section) => !filtered.includes(section));
+export function getSafeSectionOrder(sectionOrder, customSectionKeys = []) {
+  const allowed = [...BUILTIN_SECTION_KEYS, ...customSectionKeys];
+  if (!Array.isArray(sectionOrder)) return allowed;
+  const filtered = sectionOrder.filter((section) => allowed.includes(section));
+  const missing = allowed.filter((section) => !filtered.includes(section));
   return [...filtered, ...missing];
 }
 
-export function getSinglePageFitSettings(resume, { enabled = false, layout = 'traditional' } = {}) {
-  const estimatedLines = estimateResumeLines(resume, layout);
-  const targetLines = getTargetLines(layout);
+export function getSinglePageFitSettings(resume, { enabled = false } = {}) {
+  const estimatedLines = estimateResumeLines(resume);
+  const targetLines = 80;
 
   const defaultSettings = {
     enabled,
