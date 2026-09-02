@@ -1,8 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { DEFAULT_SUBSECTION_TYPE, createEmptyCustomEntry } from '../utils/customSections';
-import { DEFAULT_GLOBAL_DESIGN, normalizeDesignSettings } from '../utils/designSettings';
+import { DEFAULT_RESUME_STYLE, normalizeDesignSettings, setDesignPreset, updateDesignCustomField } from '../utils/designSettings';
 import { moveItemInArray } from '../utils/reorder';
+import { createEmptySkillCategory, flattenSkillCategories, normalizeSkillCategories } from '../utils/skillCategories';
 import {
   BUILTIN_SECTION_KEYS,
   fromCustomSectionKey,
@@ -50,14 +51,15 @@ const initialState = {
   workExperience: [],
   education: [],
   skills: [],
+  skillCategories: [],
   projects: [],
   certifications: [],
   languages: [],
   customSections: [],
   sectionOrder: [...BUILTIN_SECTION_KEYS],
   designSettings: {
-    global: { ...DEFAULT_GLOBAL_DESIGN },
-    sections: {},
+    presetId: 'classicAts',
+    custom: { ...DEFAULT_RESUME_STYLE },
   },
 };
 
@@ -73,6 +75,8 @@ function loadFromStorage() {
         ...initialState,
         ...parsed,
         personalInfo: { ...initialState.personalInfo, ...(parsed.personalInfo || {}) },
+        skillCategories: normalizeSkillCategories(parsed),
+        skills: flattenSkillCategories(normalizeSkillCategories(parsed)),
         customSections,
         sectionOrder: normalizeSectionOrder(parsed.sectionOrder, customSections),
         designSettings: normalizeDesignSettings(parsed.designSettings),
@@ -131,18 +135,71 @@ export function ResumeProvider({ children }) {
     }));
   };
 
-  const addSkill = (skill) => {
-    if (skill && !resume.skills.includes(skill)) {
-      setResume((prev) => ({ ...prev, skills: [...prev.skills, skill] }));
-    }
+  const applySkillCategories = (updater) => {
+    setResume((prev) => {
+      const current = normalizeSkillCategories(prev);
+      const nextCategories = updater(current);
+      return {
+        ...prev,
+        skillCategories: nextCategories,
+        skills: flattenSkillCategories(nextCategories),
+      };
+    });
   };
 
-  const removeSkill = (skill) => {
-    setResume((prev) => ({ ...prev, skills: prev.skills.filter((s) => s !== skill) }));
+  const addSkillCategory = () => {
+    applySkillCategories((current) => [...current, createEmptySkillCategory()]);
   };
 
-  const reorderSkills = (newOrder) => {
-    setResume((prev) => ({ ...prev, skills: newOrder }));
+  const removeSkillCategory = (categoryId) => {
+    applySkillCategories((current) => current.filter((category) => category.id !== categoryId));
+  };
+
+  const renameSkillCategory = (categoryId, name) => {
+    applySkillCategories((current) => current.map((category) => (
+      category.id === categoryId
+        ? { ...category, name: name || 'Skills' }
+        : category
+    )));
+  };
+
+  const reorderSkillCategories = (fromIndex, toIndex) => {
+    applySkillCategories((current) => moveItemInArray(current, fromIndex, toIndex));
+  };
+
+  const moveSkillCategory = (index, direction) => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    reorderSkillCategories(index, targetIndex);
+  };
+
+  const addSkillToCategory = (categoryId, skill) => {
+    const trimmed = String(skill || '').trim();
+    if (!trimmed) return;
+    applySkillCategories((current) => current.map((category) => {
+      if (category.id !== categoryId) return category;
+      if (category.items.includes(trimmed)) return category;
+      return { ...category, items: [...category.items, trimmed] };
+    }));
+  };
+
+  const removeSkillFromCategory = (categoryId, skillIndex) => {
+    applySkillCategories((current) => current.map((category) => (
+      category.id === categoryId
+        ? { ...category, items: category.items.filter((_, index) => index !== skillIndex) }
+        : category
+    )));
+  };
+
+  const reorderCategorySkills = (categoryId, fromIndex, toIndex) => {
+    applySkillCategories((current) => current.map((category) => {
+      if (category.id !== categoryId) return category;
+      return { ...category, items: moveItemInArray(category.items, fromIndex, toIndex) };
+    }));
+  };
+
+  const moveCategorySkill = (categoryId, index, direction) => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    reorderCategorySkills(categoryId, index, targetIndex);
   };
 
   const reorderSections = (newOrder) => {
@@ -167,36 +224,18 @@ export function ResumeProvider({ children }) {
     reorderEntries(section, index, targetIndex);
   };
 
-  const updateGlobalDesignSetting = (field, value) => {
+  const updateDesignSetting = (field, value) => {
     setResume((prev) => ({
       ...prev,
-      designSettings: {
-        ...normalizeDesignSettings(prev.designSettings),
-        global: {
-          ...normalizeDesignSettings(prev.designSettings).global,
-          [field]: value,
-        },
-      },
+      designSettings: updateDesignCustomField(prev.designSettings, field, value),
     }));
   };
 
-  const updateSectionDesignSetting = (sectionKey, field, value) => {
-    setResume((prev) => {
-      const normalized = normalizeDesignSettings(prev.designSettings);
-      return {
-        ...prev,
-        designSettings: {
-          ...normalized,
-          sections: {
-            ...normalized.sections,
-            [sectionKey]: {
-              ...(normalized.sections[sectionKey] || {}),
-              [field]: value,
-            },
-          },
-        },
-      };
-    });
+  const updateDesignPreset = (presetId) => {
+    setResume((prev) => ({
+      ...prev,
+      designSettings: setDesignPreset(prev.designSettings, presetId),
+    }));
   };
 
   const addCustomSection = (name) => {
@@ -225,8 +264,6 @@ export function ResumeProvider({ children }) {
     setResume((prev) => {
       const customSections = prev.customSections.filter((section) => section.id !== sectionId);
       const sectionKey = toCustomSectionKey(sectionId);
-      const { [sectionKey]: removedStyle, ...remainingStyles } = normalizeDesignSettings(prev.designSettings).sections;
-      void removedStyle;
       return {
         ...prev,
         customSections,
@@ -234,10 +271,6 @@ export function ResumeProvider({ children }) {
           prev.sectionOrder.filter((key) => key !== sectionKey),
           customSections,
         ),
-        designSettings: {
-          ...normalizeDesignSettings(prev.designSettings),
-          sections: remainingStyles,
-        },
       };
     });
   };
@@ -367,14 +400,20 @@ export function ResumeProvider({ children }) {
         addEntry,
         updateEntry,
         removeEntry,
-        addSkill,
-        removeSkill,
-        reorderSkills,
+        addSkillCategory,
+        removeSkillCategory,
+        renameSkillCategory,
+        reorderSkillCategories,
+        moveSkillCategory,
+        addSkillToCategory,
+        removeSkillFromCategory,
+        reorderCategorySkills,
+        moveCategorySkill,
         reorderSections,
         reorderEntries,
         moveEntry,
-        updateGlobalDesignSetting,
-        updateSectionDesignSetting,
+        updateDesignSetting,
+        updateDesignPreset,
         addCustomSection,
         removeCustomSection,
         renameCustomSection,

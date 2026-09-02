@@ -1,4 +1,5 @@
 import { BUILTIN_SECTION_KEYS } from './sections';
+import { normalizeSkillCategories } from './skillCategories';
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const lerp = (start, end, t) => start + (end - start) * t;
@@ -11,8 +12,21 @@ const estimateWrappedLines = (text, charsPerLine = 85) => {
 };
 
 const estimateResumeLines = (resume) => {
-  const { personalInfo, workExperience, education, skills, projects, certifications, languages, customSections = [] } = resume;
+  const {
+    personalInfo,
+    workExperience,
+    education,
+    skills,
+    projects,
+    certifications,
+    languages,
+    customSections = [],
+  } = resume;
   let lines = 0;
+  const skillCategories = normalizeSkillCategories(resume);
+  const normalizedSkills = skillCategories.length
+    ? skillCategories.flatMap((category) => category.items || [])
+    : skills;
 
   if (personalInfo.fullName) lines += 2.5;
   if (personalInfo.jobTitle) lines += 1.5;
@@ -36,7 +50,7 @@ const estimateResumeLines = (resume) => {
     });
   }
 
-  if (skills.length) lines += 2 + estimateWrappedLines(skills.join(' • '), 95);
+  if (normalizedSkills.length) lines += 2 + estimateWrappedLines(normalizedSkills.join(' • '), 95);
 
   if (projects.length) {
     lines += 2;
