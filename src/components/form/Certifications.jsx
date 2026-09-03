@@ -1,4 +1,6 @@
 import { useResume } from '../../context/ResumeContext';
+import EntryReorderControls from './EntryReorderControls';
+import useReorderableEntries from './useReorderableEntries';
 
 const emptyEntry = {
   name: '',
@@ -9,6 +11,16 @@ const emptyEntry = {
 export default function Certifications() {
   const { resume, addEntry, updateEntry, removeEntry } = useResume();
   const entries = resume.certifications;
+  const {
+    dragOverIdx,
+    draggingIdx,
+    handleDragStart,
+    handleDragOver,
+    handleDrop,
+    handleDragEnd,
+    moveUp,
+    moveDown,
+  } = useReorderableEntries('certifications');
 
   return (
     <div className="form-section">
@@ -19,10 +31,25 @@ export default function Certifications() {
         </button>
       </div>
       {entries.map((entry, i) => (
-        <div className="entry-card" key={i}>
+        <div
+          className={`entry-card${dragOverIdx === i && draggingIdx !== i ? ' entry-card--drop-target' : ''}`}
+          key={i}
+          onDragOver={(event) => handleDragOver(event, i)}
+          onDrop={(event) => handleDrop(event, i)}
+        >
           <div className="entry-card-header">
             <span>Certification #{i + 1}</span>
-            <button className="btn-remove" onClick={() => removeEntry('certifications', i)}>Remove</button>
+            <div className="entry-card-actions">
+              <EntryReorderControls
+                index={i}
+                total={entries.length}
+                onMoveUp={moveUp}
+                onMoveDown={moveDown}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+              />
+              <button className="btn-remove" onClick={() => removeEntry('certifications', i)}>Remove</button>
+            </div>
           </div>
           <div className="form-grid">
             <div className="form-group">
