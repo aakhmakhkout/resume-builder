@@ -1,0 +1,48 @@
+import { ResumeProvider } from './context/ResumeContext';
+import PersonalInfo from './components/form/PersonalInfo';
+import SectionOrder from './components/form/SectionOrder';
+import WorkExperience from './components/form/WorkExperience';
+import Education from './components/form/Education';
+import Skills from './components/form/Skills';
+import Projects from './components/form/Projects';
+import Certifications from './components/form/Certifications';
+import Languages from './components/form/Languages';
+import DesignCustomizationPanel from './components/form/DesignCustomizationPanel';
+import CustomSections from './components/form/CustomSections';
+import ResumePreview from './components/ResumePreview';
+import './App.css';
+
+function App() {
+  return (
+    <ResumeProvider>
+      <div className="app-root">
+        <div className="app-layout">
+          <div className="form-panel">
+            <div className="form-panel-header">
+              <h1 className="app-title">📄 Resume Builder</h1>
+              <p className="app-subtitle">Fill in your details and see your resume update in real-time</p>
+            </div>
+            <div className="form-panel-content">
+              <PersonalInfo />
+              <SectionOrder />
+              <DesignCustomizationPanel />
+              <WorkExperience />
+              <Education />
+              <Skills />
+              <Projects />
+              <Certifications />
+              <Languages />
+              <CustomSections />
+            </div>
+          </div>
+          <ResumePreview />
+        </div>
+        <footer className="app-footer">
+          © {new Date().getFullYear()} Aakh Makh Kout. All rights reserved.
+        </footer>
+      </div>
+    </ResumeProvider>
+  );
+}
+
+export default App;
